@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public interface ChallAdminService {
@@ -19,21 +20,17 @@ public interface ChallAdminService {
   // 조기 종료
   void earlyFinishChallenge(Long challIdx);
 
-  // 챌린지 검색 (제목, 카테고리)
-  List<ChallengeDTO> searchChallenges(String challTitle,
-                                      String challCategory,
-                                      int offset, int size, String sort);
 
     // --------------------- 조회 -----------------------
-    // ----------------- 최신 챌린지 조회 (페이징 적용) -----------------
-    List<ChallengeDTO> getAllChallengesAdmin(String challState, int offset, int size);
-
-    int getTotalLatestChallenges(String challState);         // 최신 챌린지 총 개수 조회
-
-
-  List<ChallengeDTO> getChallengesByCategoryId(int categoryIdx, int page, int size);   // 카테고리별 챌린지 조회 (페이징 적용)
-
-  int getTotalChallengesByCategory(int categoryIdx);        // 카테고리별 챌린지 총 개수 조회
+    // 챌린지 검색 및 조회(페이징 적용)
+    Map<String, Object> searchChallenges(
+            @Param("challTitle") String challTitle,
+            @Param("challCategory") String challCategory,
+            @Param("challState") String challState,   // 상태 필터 추가
+            @Param("offset") int offset,
+            @Param("size") int size,
+            @Param("sort") String sort
+    );
 
   ChallengeDTO getChallengeDetail(Long challIdx);          // 챌린지 상세 조회
 

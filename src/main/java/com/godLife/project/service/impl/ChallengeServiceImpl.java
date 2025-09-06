@@ -71,7 +71,7 @@ public class ChallengeServiceImpl implements ChallengeService {
         if (challenge.getChallEndTime() != null
                 && LocalDateTime.now().isAfter(challenge.getChallEndTime())
                 && !challenge.getChallState().equals(ChallengeState.END.getCode())
-                && !challenge.getChallState().equals(ChallengeState.COMPLETED.getCode())) {
+                && !challenge.getChallState().equals(ChallengeState.FINISHED.getCode())) {
             challenge.setChallState(ChallengeState.END.getCode());
         }
 

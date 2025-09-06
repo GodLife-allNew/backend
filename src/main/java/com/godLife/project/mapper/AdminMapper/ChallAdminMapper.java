@@ -26,30 +26,23 @@ public interface ChallAdminMapper {
   int earlyFinishChallenge(Long challIdx);
   // 유저 참여형 챌린지 최초 참여시 시작/종료시간, 상태 업데이트
   void updateChallengeStartTime(Map<String, Object> params);
+
   // 챌린지 검색 (제목, 카테고리)
   List<ChallengeDTO> searchChallenges(
           @Param("challTitle") String challTitle,
           @Param("challCategory") String challCategory,
+          @Param("challState") String challState,
           @Param("offset") int offset,
           @Param("size") int size,
           @Param("sort") String sort
   );
-  // 진행 중인 챌린지를 종료 상태로 자동 변경
-  int updateChallengesToEndStatus(@Param("now") LocalDateTime now);
+  // 총 게시글 수 조회 (페이징 계산용)
+  int countSearchChallenges(
+          @Param("challTitle") String challTitle,
+          @Param("challCategory") String challCategory,
+          @Param("challState") String challState
+  );
 
-  // 최신 챌린지 조회 (페이징 적용)
-  List<ChallengeDTO> getAllChallengesAdmin(String challState, @Param("offset") int offset, @Param("size") int size);
-
-  // 최신 챌린지 총 개수 조회
-  int getTotalLatestChallenges(@Param("challState") String challState);
-
-  // 카테고리별 챌린지 조회 (페이징 적용)
-  List<ChallengeDTO> getChallengesByCategoryId(@Param("challCategoryIdx") int challCategoryIdx,
-                                               @Param("offset") int offset,
-                                               @Param("size") int size);
-
-  // 카테고리별 챌린지 총 개수 조회
-  int countChallengesByCategoryId(@Param("challCategoryIdx") int challCategoryIdx);
 
   // 챌린지 상세조회
   ChallengeDTO challengeDetail(Long challIdx);

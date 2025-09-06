@@ -72,13 +72,13 @@
 
 
     <!-- 관리자: 챌린지 검색 + 상태별 조회 -->
-    <select id="getAllChallengesAdmin" resultType="com.godLife.project.dto.contents.ChallengeDTO">
+    <select id="searchChallenges" resultType="com.godLife.project.dto.contents.ChallengeDTO">
         SELECT
         CT.CHALL_IDX,
         CT.CHALL_TITLE,
         CT.CHALL_DESCRIPTION,
         CT.CHALL_CATEGORY_IDX,
-        CAT.CATEGORY_NAME,
+        CAT.CHALL_NAME,
         CT.MAX_PARTICIPANTS,
         CT.CHALL_END_TIME,
         COUNT(CJ.USER_IDX) AS CURRENT_PARTICIPANTS,
@@ -93,7 +93,7 @@
                 LOWER(CT.CHALL_TITLE) LIKE CONCAT('%', LOWER(#{challTitle}), '%')
             </if>
             <if test="challCategory != null and challCategory != ''">
-                AND LOWER(CAT.CATEGORY_NAME) LIKE CONCAT('%', LOWER(#{challCategory}), '%')
+                AND LOWER(CAT.CHALL_NAME) LIKE CONCAT('%', LOWER(#{challCategory}), '%')
             </if>
             <if test="challState != null and challState != ''">
                 AND CT.CHALL_STATE = #{challState}
@@ -104,7 +104,7 @@
         CT.CHALL_TITLE,
         CT.CHALL_DESCRIPTION,
         CT.CHALL_CATEGORY_IDX,
-        CAT.CATEGORY_NAME,
+        CAT.CHALL_NAME,
         CT.MAX_PARTICIPANTS,
         CT.CHALL_END_TIME,
         CT.CHALL_CREATED_AT,
@@ -123,36 +123,34 @@
         LIMIT #{size} OFFSET #{offset}
     </select>
 
+    <!-- 관리자: 챌린지 검색 + 상태별 조회 총 게시글 수 -->
+    <select id="countSearchChallenges" resultType="int">
+        SELECT COUNT(*)
+        FROM CHALL_TABLE CT
+        JOIN CHALL_CATEGORY CAT ON CT.CHALL_CATEGORY_IDX = CAT.CHALL_CATEGORY_IDX
+        <where>
+            <!-- 제목 검색 -->
+            <if test="challTitle != null and challTitle != ''">
+                AND LOWER(CT.CHALL_TITLE) LIKE CONCAT('%', LOWER(#{challTitle}), '%')
+            </if>
+
+            <!-- 카테고리 검색 -->
+            <if test="challCategory != null and challCategory != ''">
+                AND LOWER(CAT.CHALL_NAME) LIKE CONCAT('%', LOWER(#{challCategory}), '%')
+            </if>
+
+            <!-- 상태 검색 -->
+            <if test="challState != null and challState != ''">
+                AND CT.CHALL_STATE = #{challState}
+            </if>
+        </where>
+    </select>
+
     <!-- 챌린지 존재 확인 -->
     <select id="existsById" resultType="int">
         SELECT COUNT(*) FROM CHALL_TABLE WHERE CHALL_IDX = #{challIdx}
     </select>
 
-
-    <!-- 카테고리별 챌린지 조회 (페이징 적용) -->
-    <select id="getChallengesByCategoryId" resultType="com.godLife.project.dto.request.ChallRequestDTO">
-        SELECT
-        CT.CHALL_IDX,
-        CT.CHALL_TITLE,
-        CT.CHALL_DESCRIPTION,
-        CT.CHALL_CATEGORY_IDX,
-        CT.MAX_PARTICIPANTS,
-        CT.CHALL_END_TIME,
-        CT.CHALL_CREATED_AT
-        FROM CHALL_TABLE CT
-        WHERE CT.CHALL_CATEGORY_IDX = #{challCategoryIdx}
-        AND (CT.CHALL_END_TIME IS NULL OR CT.CHALL_END_TIME > NOW())
-        ORDER BY CT.CHALL_CREATED_AT DESC
-        LIMIT #{size} OFFSET #{offset}
-    </select>
-
-    <!-- 카테고리별 챌린지 총 개수 조회 -->
-    <select id="countChallengesByCategoryId" resultType="int">
-        SELECT COUNT(*)
-        FROM CHALL_TABLE
-        WHERE CHALL_CATEGORY_IDX = #{challCategoryIdx}
-        AND (CHALL_END_TIME IS NULL OR CHALL_END_TIME > NOW())
-    </select>
 
 
     <!-- 챌린지 상세정보 조회 -->

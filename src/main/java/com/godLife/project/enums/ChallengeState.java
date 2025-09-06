@@ -5,7 +5,7 @@ import java.util.Arrays;
 public enum ChallengeState {
     PUBLISHED("PUBLISHED", "게시중"),
     IN_PROGRESS("IN_PROGRESS", "진행중"),
-    COMPLETED("COMPLETED", "완료됨"),
+    FINISHED("FINISHED", "완료됨"),
     END("END", "종료");
 
     private final String code;   // DB 및 내부 처리용
