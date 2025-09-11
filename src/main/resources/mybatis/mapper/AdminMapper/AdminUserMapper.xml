@@ -38,8 +38,7 @@
     <!-- 회원 추방 -->
     <update id="banUserByIdx" parameterType="int">
         UPDATE USER_TABLE
-        SET IS_DELETED = 'Y',
-        DELETE_DATE = NOW()
+        SET IS_BANNED  = 1
         WHERE USER_IDX = #{userIdx}
     </update>
 

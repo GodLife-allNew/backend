@@ -158,15 +158,20 @@ public class ChallengeController {
                                               @RequestHeader("Authorization") String authHeader,
                                               @RequestBody ChallengeJoinRequest joinRequest) {
     try {
-      int userIdx = handler.getUserIdxFromToken(authHeader);
+      String token = authHeader.replace("Bearer ", "").trim();
+      int userIdx = handler.getUserIdxFromToken(token);
       ChallengeDTO challenge = challengeService.joinChallenge(
               challIdx,
               userIdx,
               joinRequest.getActivity(),
-              joinRequest.getActivityTime()
+              joinRequest.getActivityTime(),
+              token
       );
       return ResponseEntity.ok(challenge);
 
+    } catch (IllegalStateException e) { // 활동정지 유저
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+              .body(handler.createResponse(403, e.getMessage()));
     } catch (IllegalArgumentException e) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
               .body(handler.createResponse(400, e.getMessage()));

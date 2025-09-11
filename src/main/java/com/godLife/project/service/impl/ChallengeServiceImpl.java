@@ -5,6 +5,7 @@ import com.godLife.project.dto.infos.ChallengeJoinDTO;
 import com.godLife.project.dto.verify.ChallengeVerifyDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
 import com.godLife.project.enums.ChallengeState;
+import com.godLife.project.jwt.JWTUtil;
 import com.godLife.project.mapper.ChallengeMapper;
 import com.godLife.project.service.interfaces.ChallengeService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ChallengeServiceImpl implements ChallengeService {
     private final ChallengeMapper challengeMapper;
+    private final JWTUtil jwtUtil;
 
     // ----------------- 최신 챌린지 조회 (페이징 적용) -----------------
     @Override
@@ -144,9 +146,15 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     // ----------------- 챌린지 참여 -----------------
     @Override
-    public ChallengeDTO joinChallenge(Long challIdx, int userIdx, String activity, int activityTime) {
+    public ChallengeDTO joinChallenge(Long challIdx, int userIdx, String activity, int activityTime,
+                                      String token) {
         // 챌린지 기본 정보 조회
         ChallengeDTO challenge = challengeMapper.challengeDetail(challIdx);
+
+        int isBanned = jwtUtil.getIsBanned(token);
+        if (isBanned == 1) {
+            throw new IllegalStateException("활동정지된 유저는 참여할 수 없습니다.");
+        }
 
         // 챌린지 상태가 참여 가능한 상태인지 확인
         if (!"PUBLISHED".equals(challenge.getChallState()) && !"IN_PROGRESS".equals(challenge.getChallState())) {
