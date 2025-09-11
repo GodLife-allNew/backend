@@ -80,20 +80,29 @@ public class PlanServicelmpl implements PlanService {
 
     // 루틴 조회
     PlanDTO planDTO = planMapper.detailPlanByPlanIdx(planIdx, isDeleted);
-    if (planDTO != null) {
-      if (planDTO.getIsShared() == 0) { // 비공개 루틴일 경우,
-        String authHeader = request.getHeader("Authorization"); // 토큰 유무 확인
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-          int userIdx = handler.getUserIdxFromToken(authHeader);
+    if (planDTO != null) { // 루틴이 있을 때
+      String authHeader = request.getHeader("Authorization"); // 토큰 값 저장
 
-          if (userIdx != planDTO.getUserIdx()) { // 작성자가 아닌 경우
-            return new PlanDTO();
-          }
-        } else { // 토큰이 없는 경우
-          return new PlanDTO();
+      boolean isPrivate = planDTO.getIsShared() == 0; // true: 비공개 루틴, false: 공개 루틴
+      boolean existAuth = authHeader != null && authHeader.startsWith("Bearer "); // true: 토큰 존재, false: 토큰 부재
+
+      if (existAuth) { // 토큰이 있을 경우,
+        int userIdx = handler.getUserIdxFromToken(authHeader); // 요청자 userIdx 조회
+
+        if (userIdx == planDTO.getUserIdx()) { // 작성자 본인이 맞다면
+          planDTO.setIsWriter(1);
+        }
+
+        if (isPrivate && planDTO.getIsWriter() == 0) { // 비공개 루틴인데, 작성자가 아닐경우
+          return new PlanDTO(); // 빈 데이터 반환
         }
       }
+
+      if (!existAuth && isPrivate) { // 비공개 루틴인데, 토큰도 없을 경우
+        return new PlanDTO(); // 빈 데이터 반환
+      }
+
       // 활동 조회
       planDTO.setActivities(planMapper.detailActivityByPlanIdx(planIdx));
       // 관심사 정보 조회
@@ -105,10 +114,10 @@ public class PlanServicelmpl implements PlanService {
 
       if (planDTO.getJobIdx() == 19) {
         planDTO.setJobEtcCateDTO(planMapper.getJobEtcInfoByPlanIdx(planIdx));
-      }
-      else {
+      } else {
         planDTO.setJobCateDTO(planMapper.getJOBCategoryByJobIdx(planDTO.getJobIdx()));
       }
+
       return planDTO;
     }
     return null;

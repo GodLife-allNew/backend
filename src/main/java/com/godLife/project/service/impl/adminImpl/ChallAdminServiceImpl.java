@@ -153,8 +153,8 @@ public class ChallAdminServiceImpl implements ChallAdminService {
 
     // 종료 시간이 되면 상태를 "완료됨"으로 변경
     if (challenge.getChallEndTime() != null && LocalDateTime.now().isAfter(challenge.getChallEndTime())
-            && !challenge.getChallState().equals(ChallengeState.COMPLETED.getCode())) {
-      challenge.setChallState(ChallengeState.COMPLETED.getCode());
+            && !challenge.getChallState().equals(ChallengeState.FINISHED.getCode())) {
+      challenge.setChallState(ChallengeState.FINISHED.getCode());
     }
 
     // 참가자 상세 정보 조회 및 설정
