@@ -102,37 +102,34 @@ public class ChallAdminServiceImpl implements ChallAdminService {
   }
 
 
-  // 챌린지 검색
-  public List<ChallengeDTO> searchChallenges(String challTitle, String challCategory, int offset, int size, String sort) {
-    return challAdminMapper.searchChallenges(challTitle, challCategory, offset, size, sort);
-  }
-
-
 
   // --------------------- 조회 -----------------------
-  // ----------------- 최신 챌린지 조회 (페이징 적용) -----------------
-  @Override
-  public List<ChallengeDTO> getAllChallengesAdmin(String challState, int offset, int size) {
-    return challAdminMapper.getAllChallengesAdmin(challState, offset, size);
-  }
 
-  // 최신 챌린지 총 개수 조회
+  // 챌린지 검색
   @Override
-  public int getTotalLatestChallenges(String challState) {
-    return challAdminMapper.getTotalLatestChallenges(challState);
-  }
+  public Map<String, Object> searchChallenges(String challTitle, String challCategory, String challState,
+                                              int page, int size, String sort) {
+    int offset = (page - 1) * size; //
 
+    List<ChallengeDTO> challenges = challAdminMapper.searchChallenges(
+            challTitle, challCategory, challState, offset, size, sort
+    );
 
-  // -----------------카테고리별 챌린지 조회 (페이징 적용) -----------------
-  @Override
-  public List<ChallengeDTO> getChallengesByCategoryId(int categoryIdx, int page, int size) {
-    int offset = (page - 1) * size;
-    return challAdminMapper.getChallengesByCategoryId(categoryIdx, offset, size);
-  }
-  // 카테고리별 챌린지 총 개수 조회
-  @Override
-  public int getTotalChallengesByCategory(int categoryIdx) {
-    return challAdminMapper.countChallengesByCategoryId(categoryIdx);
+    int totalChallenges = challAdminMapper.countSearchChallenges(
+            challTitle, challCategory, challState
+    );
+
+    int totalPages = (int) Math.ceil((double) totalChallenges / size);
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("challenges", challenges);
+    response.put("totalPages", totalPages);
+    response.put("currentPage", page);
+    response.put("pageSize", size);
+    response.put("totalChallenges", totalChallenges);
+    response.put("challState", challState == null ? "전체" : challState);
+
+    return response;
   }
 
 

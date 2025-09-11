@@ -186,20 +186,13 @@
         AND VERIFY_DATE = #{today}
     </select>
 
-
-    <!-- 남은 클리어 시간 차감 및 상태 변경 -->
+    <!-- 인증시 클리어시간 차감 -->
     <update id="updateClearTime">
         UPDATE CHALL_TABLE
-        SET TOTAL_CLEAR_TIME = CASE
-                                   WHEN TOTAL_CLEAR_TIME - #{elapsedTime} <![CDATA[<]]> 0 THEN 0
-                                   ELSE TOTAL_CLEAR_TIME - #{elapsedTime}
-            END,
-            CHALL_STATE = CASE
-                              WHEN TOTAL_CLEAR_TIME - #{elapsedTime} <![CDATA[<=]]> 0 THEN 'FINISHED'
-                              ELSE CHALL_STATE
-                END
+        SET TOTAL_CLEAR_TIME = GREATEST(TOTAL_CLEAR_TIME - #{elapsedTime}, 0)
         WHERE CHALL_IDX = #{challIdx}
     </update>
+
 
     <!-- 인증을 통해 감소한 총 시간 조회 -->
     <select id="getElapsedClearTime" resultType="int">

@@ -163,87 +163,21 @@ public class ChallAdminController {
 
   //  -------------- 챌린지 검색 API (제목, 카테고리) -------------
   @GetMapping("/search")
-  public List<ChallengeDTO> searchChallenges(
+  public ResponseEntity<Map<String, Object>> searchChallenges(
           @RequestParam(required = false) String challTitle,
           @RequestParam(required = false) String challCategory,
-          @RequestParam(defaultValue = "0") int page,
+          @RequestParam(required = false) String challState, // 상태 필터 추가
+          @RequestParam(defaultValue = "1") int page,
           @RequestParam(defaultValue = "10") int size,
-          @RequestParam(defaultValue = "chall_idx DESC") String sort
+          @RequestParam(defaultValue = "challCreatedAt") String sort
   ) {
-    int offset = page * size;
-    return challAdminService.searchChallenges(challTitle, challCategory, offset, size, sort);
-  }
-
-
-  // ------------- 리스트 조회 -----------------
-  @GetMapping("/latest")
-  public ResponseEntity<Map<String, Object>> getAllChallengesAdmin(
-          @RequestParam(required = false) String challState, // 상태 필터 (선택)
-          @RequestParam(defaultValue = "1") int page,
-          @RequestParam(defaultValue = "10") int size) {
-
-    int offset = (page - 1) * size;
-
-    // 상태에 맞는 챌린지 조회
-    List<ChallengeDTO> challenges = challAdminService.getAllChallengesAdmin(challState, offset, size);
-
-    // 상태 조건에 맞는 전체 개수 조회
-    int totalChallenges = challAdminService.getTotalLatestChallenges(challState);
-    int totalPages = (int) Math.ceil((double) totalChallenges / size);
-
-    if (challenges.isEmpty()) {
-      return ResponseEntity.status(HttpStatus.NO_CONTENT)
-              .body(createResponse(204, "챌린지가 없습니다."));
-    }
-
-    Map<String, Object> response = createResponse(200, "챌린지 조회 성공");
-    response.put("challenges", challenges);
-    response.put("totalPages", totalPages);
-    response.put("currentPage", page);
-    response.put("pageSize", size);
-    response.put("challState", challState == null ? "전체" : challState);
+    Map<String, Object> response = challAdminService.searchChallenges(
+            challTitle, challCategory, challState, page, size, sort
+    );
 
     return ResponseEntity.ok(response);
   }
 
-  // ------------- 카테고리 조회 -----------------
-  @GetMapping("/latest/{challCategoryIdx}")
-  public ResponseEntity<Map<String, Object>> getChallengesByCategoryId(
-          @PathVariable int challCategoryIdx,
-          @RequestParam(defaultValue = "1") int page,
-          @RequestParam(defaultValue = "10") int size) {
-
-    List<ChallengeDTO> challenges = challAdminService.getChallengesByCategoryId(challCategoryIdx, page, size);
-    int totalChallenges = challAdminService.getTotalChallengesByCategory(challCategoryIdx);
-    int totalPages = (int) Math.ceil((double) totalChallenges / size);
-
-    Map<String, Object> response;
-
-    if (challenges.isEmpty()) {
-      response = createResponse(200, "해당 카테고리에 챌린지가 없습니다.");
-      response.put("challenges", new ArrayList<>()); // 빈 리스트
-      response.put("totalPages", 0);
-      response.put("currentPage", page);
-      response.put("pageSize", size);
-      return ResponseEntity.ok(response);
-    }
-
-    response = createResponse(200, "카테고리별 챌린지 조회 성공");
-    response.put("challenges", challenges);
-    response.put("totalPages", totalPages);
-    response.put("currentPage", page);
-    response.put("pageSize", size);
-
-    return ResponseEntity.ok(response);
-  }
-
-  // 응답 생성 메서드
-  private Map<String, Object> createResponse(int status, String message) {
-    Map<String, Object> response = new HashMap<>();
-    response.put("status", status);
-    response.put("message", message);
-    return response;
-  }
 
   // -------------  챌린지 상세 조회  -----------------
   @GetMapping("/detail/{challIdx}")
