@@ -17,6 +17,9 @@ public interface CategoryMapper {
 
     // 직업 카테고리 조회
     List<JobCateDTO> getAllJOBCategories();
+    // 직접 입력 직업 인덱스 번호 조회
+    int getIdxOfCustomJob();
+
     // 관심사 카테고리 조회
     List<TargetCateDTO> getAllTargetCategories();
 

@@ -8,6 +8,7 @@ import com.godLife.project.enums.QnaStatus;
 import com.godLife.project.exception.CustomException;
 import com.godLife.project.mapper.ListMapper;
 import com.godLife.project.mapper.PlanMapper;
+import com.godLife.project.service.interfaces.CategoryService;
 import com.godLife.project.service.interfaces.ListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class ListServiceImpl implements ListService {
 
   public final ListMapper listMapper;
   public final PlanMapper planMapper;
+  private final CategoryService categoryService;
 
   @Override
   @Transactional
@@ -52,7 +54,9 @@ public class ListServiceImpl implements ListService {
         myPlanDTO.setFireInfos(planMapper.detailFireByPlanIdx(planIdx)); // 불꽃 레벨 정보 추가
 
         // 직업 정보 추가
-        if (jobIdx == 19) {
+        int customJobIdx = categoryService.getIdxOfCustomJob(); // '직접입력' => 19
+
+        if (jobIdx == customJobIdx) {
           myPlanDTO.setJobAddedInfos(planMapper.getJobEtcInfoByPlanIdx(planIdx));
         }
         else {

@@ -19,6 +19,13 @@
     ORDER BY JC.JOB_IDX
   </select>
 
+  <!-- 직접 입력 직업 인덱스 번호 조회-->
+  <select id="getIdxOfCustomJob" resultType="int">
+    SELECT JOB_IDX
+    FROM JOB_CATEGORY
+    WHERE JOB_NAME = '직접입력'
+  </select>
+
   <!-- 관심사 카테고리 조회 -->
   <select id="getAllTargetCategories" resultType="com.godLife.project.dto.categories.TargetCateDTO">
     SELECT

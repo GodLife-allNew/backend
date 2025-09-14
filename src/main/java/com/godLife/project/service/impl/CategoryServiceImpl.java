@@ -102,6 +102,10 @@ public class CategoryServiceImpl implements CategoryService {
     public List<JobCateDTO> getAllJobCategories() {
         return categoryMapper.getAllJOBCategories();
     }
+
+    // 직접 입력 직업 인덱스 조회
+    @Override
+    public int getIdxOfCustomJob() { return categoryMapper.getIdxOfCustomJob(); }
     // 관심사 카테고리 조회
     @Override
     public  List<TargetCateDTO> getAllTargetCategories() {
