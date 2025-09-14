@@ -54,7 +54,7 @@ public class ReportCheckFilter extends OncePerRequestFilter {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
                     response.setCharacterEncoding("UTF-8");
-                    response.getWriter().write("{\"error\": \"신고 누적으로 인해 서비스 이용이 제한되었습니다.\"}");
+                    response.getWriter().write("{\"error\": \"정지로 인해 서비스 이용이 제한되었습니다.\"}");
                     return;
                 }
             } catch (UnauthorizedException e) {

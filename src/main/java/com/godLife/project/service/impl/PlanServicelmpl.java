@@ -6,6 +6,7 @@ import com.godLife.project.dto.datas.PlanDTO;
 import com.godLife.project.dto.request.PlanRequestDTO;
 import com.godLife.project.handler.GlobalExceptionHandler;
 import com.godLife.project.mapper.PlanMapper;
+import com.godLife.project.service.interfaces.CategoryService;
 import com.godLife.project.service.interfaces.PlanService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.List;
 public class PlanServicelmpl implements PlanService {
 
   private final PlanMapper planMapper;
+  private final CategoryService categoryService;
 
   private final GlobalExceptionHandler handler;
 
@@ -34,6 +36,8 @@ public class PlanServicelmpl implements PlanService {
       int userIdx = planDTO.getUserIdx();
       int isCompleted = planDTO.getIsCompleted(); // 0
       int isDeleted = planDTO.getIsDeleted();     // 0
+      int customJobIdx = categoryService.getIdxOfCustomJob(); // '직접입력' => 19
+
       if (planMapper.getCntOfPlanByUserIdxNIsCompleted(userIdx, isCompleted, isDeleted) > 4) {
         return 412;
       }
@@ -50,7 +54,7 @@ public class PlanServicelmpl implements PlanService {
         planMapper.insertActivity(activityDTO);
       }
 
-      if (planDTO.getJobIdx() == 19) {
+      if (planDTO.getJobIdx() == customJobIdx) {
         JobEtcCateDTO jobEtcCateDTO;
         jobEtcCateDTO = planDTO.getJobEtcCateDTO();
         jobEtcCateDTO.setPlanIdx(planIdx);
@@ -84,6 +88,8 @@ public class PlanServicelmpl implements PlanService {
     if (planDTO != null) { // 루틴이 있을 때
       String authHeader = request.getHeader("Authorization"); // 토큰 값 저장
 
+      int customJobIdx = categoryService.getIdxOfCustomJob(); // '직접입력' => 19
+
       boolean isPrivate = planDTO.getIsShared() == 0; // true: 비공개 루틴, false: 공개 루틴
       boolean existAuth = authHeader != null && authHeader.startsWith("Bearer "); // true: 토큰 존재, false: 토큰 부재
 
@@ -112,7 +118,7 @@ public class PlanServicelmpl implements PlanService {
       // 루틴 인증 횟수 조회
       planDTO.setVerifyCount(planMapper.getVerifyCountByPlanIdx(planIdx));
 
-      if (planDTO.getJobIdx() == 19) {
+      if (planDTO.getJobIdx() == customJobIdx) {
         planDTO.setJobEtcCateDTO(planMapper.getJobEtcInfoByPlanIdx(planIdx));
       } else {
         planDTO.setJobCateDTO(planMapper.getJOBCategoryByJobIdx(planDTO.getJobIdx()));
@@ -183,7 +189,9 @@ public class PlanServicelmpl implements PlanService {
   }
   // 기타 직업 수정 및 추가 함수
   private void processJobEtc(int planIdx, int jobIdx, JobEtcCateDTO jobEtcCateDTO) {
-    if (jobIdx != 19) { // 999 선택 안할 시 로직 건너뜀.
+    int customJobIdx = categoryService.getIdxOfCustomJob(); // '직접입력' => 19
+
+    if (jobIdx != customJobIdx) { // '직접입력' 선택 안할 시 로직 건너뜀.
       System.out.println("기타 직업 삽입 무시함.");
       return;
     }

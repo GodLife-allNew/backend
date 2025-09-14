@@ -29,7 +29,7 @@ public interface ChallengeService {
 
 
     // 챌린지 참가
-    ChallengeDTO joinChallenge(Long challIdx, int userIdx, String activity, int activityTime);
+    ChallengeDTO joinChallenge(Long challIdx, int userIdx, String activity, int activityTime, String token);
 
     // 챌린지 인증
     void verifyChallenge(ChallengeVerifyDTO challengeVerifyDTO);

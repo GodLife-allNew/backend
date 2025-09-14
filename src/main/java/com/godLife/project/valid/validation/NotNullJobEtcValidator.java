@@ -2,16 +2,24 @@ package com.godLife.project.valid.validation;
 
 import com.godLife.project.dto.categories.JobEtcCateDTO;
 import com.godLife.project.dto.datas.PlanDTO;
+import com.godLife.project.service.interfaces.CategoryService;
 import com.godLife.project.valid.annotation.NotNullJobEtc;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class NotNullJobEtcValidator implements ConstraintValidator<NotNullJobEtc, PlanDTO> {
+
+  private final CategoryService categoryService;
 
   @Override
   public boolean isValid(PlanDTO planDTO, ConstraintValidatorContext context) {
-    // jobIdx가 999가 아닐 경우 유효성 검사 통과
-    if (planDTO.getJobIdx() != 19) {
+
+    int customJobIdx = categoryService.getIdxOfCustomJob(); // '직접입력' => 19
+
+    // jobIdx가 '직접입력'이 아닐 경우 유효성 검사 통과
+    if (planDTO.getJobIdx() != customJobIdx) {
       return true;
     }
     JobEtcCateDTO jobEtc = planDTO.getJobEtcCateDTO();

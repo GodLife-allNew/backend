@@ -16,6 +16,9 @@ public interface CategoryService {
     List<TopCateDTO> getOriginAllTopCategories();
     // 직업 카테고리 조회
     List<JobCateDTO> getAllJobCategories();
+
+    // 직접 입력 인덱스 번호 조회
+    int getIdxOfCustomJob();
     // 관심사 카테고리 조회
     List<TargetCateDTO> getAllTargetCategories();
     // 챌린지 카테고리 조회
