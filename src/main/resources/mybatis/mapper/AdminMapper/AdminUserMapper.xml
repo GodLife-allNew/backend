@@ -35,12 +35,29 @@
         WHERE IS_DELETED = 'N'
     </select>
 
-    <!-- 회원 추방 -->
+    <!--                   정지 / 복구 관련 로직 쿼리문 -->
+    <!-- 회원 정지/복구 토글 -->
     <update id="banUserByIdx" parameterType="int">
         UPDATE USER_TABLE
-        SET IS_BANNED  = 1
+        SET IS_BANNED  = 1 - IS_BANNED
         WHERE USER_IDX = #{userIdx}
     </update>
+
+    <!-- 유저 존재 여부 확인 -->
+    <select id="existsByUserIdx" parameterType="int" resultType="int">
+        SELECT COUNT(*)
+        FROM USER_TABLE
+        WHERE USER_IDX = #{userIdx}
+    </select>
+
+    <!-- 현재 정지 상태 조회 -->
+    <select id="selectBanStatusByIdx" parameterType="int" resultType="int">
+        SELECT IS_BANNED
+        FROM USER_TABLE
+        WHERE USER_IDX = #{userIdx}
+    </select>
+
+
 
     <!-- 권한 목록 조회 -->
     <select id="getAuthorityList" resultType="com.godLife.project.dto.categories.AuthorityCateDTO">

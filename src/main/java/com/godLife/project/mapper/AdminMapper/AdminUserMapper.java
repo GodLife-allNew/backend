@@ -13,7 +13,11 @@ import java.util.List;
 public interface AdminUserMapper {
     List<AdminUserDTO> selectAllActiveUsers(@Param("offset")int offset, @Param("limit")int limit);      // 유저 정보 리스트 조회
     int countAllActiveUsers();                     // 전체 유저 수 조회 (페이징)
-    int banUserByIdx(int userIdx);                // 유저 정지
+
+
+    int banUserByIdx(int userIdx);                // 유저 정지/복구 토글
+    int existsByUserIdx(int userIdx);             // 유저 존재 여부 확인
+    int selectBanStatusByIdx(int userIdx);        // 현재 정지 상태 조회 (0 or 1)
 
     // 권한관리
     List<AuthorityCateDTO> getAuthorityList();                      // 권한 목록 조회

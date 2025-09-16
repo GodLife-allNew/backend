@@ -8,6 +8,7 @@ import com.godLife.project.service.interfaces.AdminInterface.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -63,19 +64,35 @@ public class AdminUserController {
     @PatchMapping("/ban/{userIdx}")
     public ResponseEntity<Map<String, Object>> banUser(@PathVariable int userIdx) {
         try {
+            // 1) 존재 여부 먼저 체크 (optional)
+            if (adminUserService.existsByUserIdx(userIdx) == 0) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(handler.createResponse(404, "존재하지 않는 유저입니다."));
+            }
+
+            // 2) 정지/복구 토글 실행
             int result = adminUserService.banUser(userIdx);
 
             if (result > 0) {
-                return ResponseEntity.ok(handler.createResponse(200, "해당 유저가 정상적으로 추방되었습니다."));
+                // 3) 토글 후 현재 상태 다시 조회해서 메시지 분기
+                int banned = adminUserService.getBanStatus(userIdx); // 0 or 1
+                String message = (banned == 1)
+                        ? "해당 유저가 정상적으로 정지되었습니다."
+                        : "해당 유저가 정상적으로 복구되었습니다.";
+                return ResponseEntity.ok(handler.createResponse(200, message));
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(handler.createResponse(404, "존재하지 않거나 이미 추방된 유저입니다."));
+                        .body(handler.createResponse(404, "상태 변경에 실패했습니다."));
             }
 
-        } catch (Exception e) {
-            log.error("회원 추방 중 오류 발생: ", e);
+        } catch (DataAccessException dae) {
+            log.error("DB 오류 발생: ", dae);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(handler.createResponse(500, "서버 오류로 회원 추방에 실패했습니다."));
+                    .body(handler.createResponse(500, "DB 오류로 회원 상태 변경에 실패했습니다."));
+        } catch (Exception e) {
+            log.error("회원 상태 변경 중 오류 발생: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(handler.createResponse(500, "서버 오류로 회원 상태 변경에 실패했습니다."));
         }
     }
 
