@@ -1,6 +1,8 @@
 package com.godLife.project.service.interfaces;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
+import com.godLife.project.dto.request.ChallRequestDTO;
+import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.ChallengeVerifyDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
 import org.springframework.stereotype.Service;
@@ -10,16 +12,11 @@ import java.util.List;
 @Service
 public interface ChallengeService {
     // 최신 챌린지 조회 (페이징 적용)
-    List<ChallengeDTO> getLatestChallenges(int page, int size);
-
+    List<ChallengeDTO> getLatestChallenges(ChallengeSearchParamDTO param);
     // 최신 챌린지 총 개수 조회
-    int getTotalLatestChallenges();
+    int countLatestChallenges(ChallengeSearchParamDTO param);
 
-    // 카테고리별 챌린지 조회 (페이징 적용)
-    List<ChallengeDTO> getChallengesByCategoryId(int categoryIdx, int page, int size);
 
-    // 카테고리별 챌린지 총 개수 조회
-    int getTotalChallengesByCategory(int categoryIdx);
 
     //챌린지 상세 조회
     ChallengeDTO getChallengeDetail(Long challIdx);

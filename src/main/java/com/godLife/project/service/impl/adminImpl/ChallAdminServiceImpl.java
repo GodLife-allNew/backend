@@ -2,6 +2,7 @@ package com.godLife.project.service.impl.adminImpl;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
 import com.godLife.project.dto.infos.ChallengeJoinDTO;
+import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.enums.ChallengeState;
 import com.godLife.project.mapper.AdminMapper.ChallAdminMapper;
 import com.godLife.project.service.interfaces.AdminInterface.ChallAdminService;
@@ -22,6 +23,22 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ChallAdminServiceImpl implements ChallAdminService {
   private final ChallAdminMapper challAdminMapper;
+
+
+  // ----------------- 최신 챌린지 조회 (페이징 적용) -----------------
+  @Override
+  public List<ChallengeDTO> getLatestAdminChallenges(ChallengeSearchParamDTO param) {
+    // offset 계산
+    int offset = (param.getPage() - 1) * param.getSize();
+    param.setOffset(offset);
+
+    return challAdminMapper.getLatestAdminChallenges(param);
+  }
+  // 챌린지 페이징을 위한 총 개수 확인
+  @Override
+  public int countLatestAdminChallenges(ChallengeSearchParamDTO param) {
+    return challAdminMapper.countLatestAdminChallenges(param);
+  }
 
   // ----------------- 챌린지 작성 -----------------
   @Override
@@ -101,36 +118,18 @@ public class ChallAdminServiceImpl implements ChallAdminService {
     return 200; // 삭제 성공
   }
 
-
-
-  // --------------------- 조회 -----------------------
-
-  // 챌린지 검색
-  @Override
-  public Map<String, Object> searchChallenges(String challTitle, String challCategory, String challState,
-                                              int page, int size, String sort) {
-    int offset = (page - 1) * size; //
-
-    List<ChallengeDTO> challenges = challAdminMapper.searchChallenges(
-            challTitle, challCategory, challState, offset, size, sort
-    );
-
-    int totalChallenges = challAdminMapper.countSearchChallenges(
-            challTitle, challCategory, challState
-    );
-
-    int totalPages = (int) Math.ceil((double) totalChallenges / size);
-
-    Map<String, Object> response = new HashMap<>();
-    response.put("challenges", challenges);
-    response.put("totalPages", totalPages);
-    response.put("currentPage", page);
-    response.put("pageSize", size);
-    response.put("totalChallenges", totalChallenges);
-    response.put("challState", challState == null ? "전체" : challState);
-
-    return response;
+  // 챌린지 공개 / 비공개 상태 변경
+  public int updateChallengeVisibility(Long challIdx, String visibilityType) {
+    int result = challAdminMapper.updateChallengeVisibility(challIdx, visibilityType);
+    return result > 0 ? 200 : 404; // 1행 이상 업데이트 → 200, 없으면 404
   }
+
+  // 챌린지 이벤트 처리
+  public int updateChallengeType(Long challIdx, String challengeType){
+    int result = challAdminMapper.updateChallengeType(challIdx, challengeType);
+    return result > 0 ? 200: 404;
+  }
+
 
 
   // ----------------- 챌린지 상세 조회 -----------------

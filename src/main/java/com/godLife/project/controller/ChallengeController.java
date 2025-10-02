@@ -2,7 +2,9 @@ package com.godLife.project.controller;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
 import com.godLife.project.dto.jwtDTO.CustomUserDetails;
+import com.godLife.project.dto.request.ChallRequestDTO;
 import com.godLife.project.dto.request.ChallengeJoinRequest;
+import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.ChallengeVerifyDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
 import com.godLife.project.handler.GlobalExceptionHandler;
@@ -10,6 +12,7 @@ import com.godLife.project.jwt.LoginFilter;
 import com.godLife.project.service.interfaces.ChallengeService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
+import oracle.jdbc.proxy.annotation.Pre;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,22 +38,35 @@ public class ChallengeController {
   }
 
 
-  @Operation(summary = "최신 챌린지 조회 API", description = "최신순으로 조회하며 종료된 챌린지는 조회하지 않음")
+  // -------------------- 최신 챌린지 조회 ----------------
   @GetMapping("/latest")
-  public ResponseEntity<Map<String, Object>> getLatestChallenges(
+  public ResponseEntity<?> getLatestChallenges(
+          @RequestParam(required = false) String challState,
+          @RequestParam(required = false) Integer challCategoryIdx,
+          @RequestParam(required = false) String visibilityType,
+          @RequestParam(required = false) String challengeType,
+          @RequestParam(required = false, defaultValue = "false") Boolean onlyActive,
+          @RequestParam(required = false, defaultValue = "false") Boolean onlyEnded,
           @RequestParam(defaultValue = "1") int page,
-          @RequestParam(defaultValue = "10") int size) {
+          @RequestParam(defaultValue = "10") int size
+  ) {
+    ChallengeSearchParamDTO param = new ChallengeSearchParamDTO();
+    param.setChallState(challState);
+    param.setChallCategoryIdx(challCategoryIdx);
+    param.setVisibilityType(visibilityType);
+    param.setChallengeType(challengeType);
+    param.setOnlyActive(onlyActive);
+    param.setOnlyEnded(onlyEnded);
+    param.setPage(page);
+    param.setSize(size);
 
-    List<ChallengeDTO> challenges = challengeService.getLatestChallenges(page, size);
-    int totalChallenges = challengeService.getTotalLatestChallenges();
+    List<ChallengeDTO> challenges = challengeService.getLatestChallenges(param);
+    int totalChallenges = challengeService.countLatestChallenges(param);
     int totalPages = (int) Math.ceil((double) totalChallenges / size);
 
-    if (challenges.isEmpty()) {
-      return ResponseEntity.status(HttpStatus.NO_CONTENT)
-              .body(createResponse(204, "최신 챌린지가 없습니다."));
-    }
-
-    Map<String, Object> response = createResponse(200, "최신 챌린지 조회 성공");
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", 200);
+    response.put("message", "챌린지 조회 성공");
     response.put("challenges", challenges);
     response.put("totalPages", totalPages);
     response.put("currentPage", page);
@@ -59,36 +75,6 @@ public class ChallengeController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "카테고리별 챌린지 조회 API", description = "선택한 카테고리의 챌린지를 최신순으로 조회")
-  @GetMapping("/latest/{challCategoryIdx}")
-  public ResponseEntity<Map<String, Object>> getChallengesByCategoryId(
-          @PathVariable int challCategoryIdx,
-          @RequestParam(defaultValue = "1") int page,
-          @RequestParam(defaultValue = "10") int size) {
-
-    List<ChallengeDTO> challenges = challengeService.getChallengesByCategoryId(challCategoryIdx, page, size);
-    int totalChallenges = challengeService.getTotalChallengesByCategory(challCategoryIdx);
-    int totalPages = (int) Math.ceil((double) totalChallenges / size);
-
-    Map<String, Object> response;
-
-    if (challenges.isEmpty()) {
-      response = createResponse(200, "해당 카테고리에 챌린지가 없습니다.");
-      response.put("challenges", new ArrayList<>()); // 빈 리스트
-      response.put("totalPages", 0);
-      response.put("currentPage", page);
-      response.put("pageSize", size);
-      return ResponseEntity.ok(response);
-    }
-
-    response = createResponse(200, "카테고리별 챌린지 조회 성공");
-    response.put("challenges", challenges);
-    response.put("totalPages", totalPages);
-    response.put("currentPage", page);
-    response.put("pageSize", size);
-
-    return ResponseEntity.ok(response);
-  }
 
   // 응답 생성 메서드
   private Map<String, Object> createResponse(int status, String message) {

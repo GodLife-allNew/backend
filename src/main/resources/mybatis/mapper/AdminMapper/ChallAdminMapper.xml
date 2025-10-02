@@ -9,38 +9,140 @@
         INSERT INTO CHALL_TABLE (
         CHALL_TITLE, CHALL_DESCRIPTION, CHALL_CATEGORY_IDX,
         MIN_PARTICIPATION_TIME, TOTAL_CLEAR_TIME, MAX_PARTICIPANTS,
-        CHALL_CREATED_AT, CHALL_STATE, CHALL_START_TIME, CHALL_END_TIME, USER_JOIN, DURATION
+        CHALL_CREATED_AT, CHALL_STATE, CHALL_START_TIME, CHALL_END_TIME, USER_JOIN, DURATION,
+        CHALLENGE_TYPE, VISIBILITY_TYPE
         )
         VALUES (
         #{challTitle}, #{challDescription}, #{challCategoryIdx},
         #{minParticipationTime}, #{totalClearTime}, #{maxParticipants},
-        NOW(), #{challState},  #{challStartTime}, #{challEndTime}, #{userJoin}, #{duration}
+        NOW(), #{challState},  #{challStartTime}, #{challEndTime}, #{userJoin}, #{duration},
+        #{challengeType}, #{visibilityType}
         )
     </insert>
 
 
-    <!-- 최신 챌린지 총 개수 조회 -->
-    <select id="getTotalLatestChallenges" resultType="int">
-        SELECT COUNT(*)
-        FROM CHALL_TABLE
+    <!-- 챌린지 조회 (필터) -->
+    <select id="getLatestAdminChallenges"
+            parameterType="com.godLife.project.dto.request.ChallengeSearchParamDTO"
+            resultType="com.godLife.project.dto.request.ChallRequestDTO">
+        SELECT
+        CT.CHALL_IDX,
+        CT.CHALL_TITLE,
+        CT.CHALL_DESCRIPTION,
+        CT.CHALL_CATEGORY_IDX,
+        CT.MAX_PARTICIPANTS,
+        CT.CHALL_END_TIME,
+        COUNT(CJ.USER_IDX) AS CURRENT_PARTICIPANTS,
+        CT.CHALL_CREATED_AT,
+        CT.CHALL_STATE
+        FROM CHALL_TABLE CT
+        LEFT JOIN CHALL_JOIN CJ ON CT.CHALL_IDX = CJ.CHALL_IDX
         <where>
+            <!-- 상태 필터 -->
             <if test="challState != null and challState != ''">
-                CHALL_STATE = #{challState}
+                AND CT.CHALL_STATE = #{challState}
             </if>
+
+            <!-- 카테고리 필터 -->
+            <if test="challCategoryIdx != null">
+                AND CT.CHALL_CATEGORY_IDX = #{challCategoryIdx}
+            </if>
+
+            <!-- visibility -->
+            <if test="visibilityType != null and visibilityType != ''">
+                AND UPPER(CT.VISIBILITY_TYPE) = UPPER(#{visibilityType})
+            </if>
+
+            <!-- 타입 필터 -->
+            <if test="challengeType != null and challengeType != ''">
+                AND UPPER(CT.CHALLENGE_TYPE) = UPPER(#{challengeType})
+            </if>
+        </where>
+        GROUP BY
+        CT.CHALL_IDX,
+        CT.CHALL_TITLE,
+        CT.CHALL_DESCRIPTION,
+        CT.CHALL_CATEGORY_IDX,
+        CT.MAX_PARTICIPANTS,
+        CT.CHALL_END_TIME,
+        CT.CHALL_CREATED_AT,
+        CT.CHALL_STATE
+        ORDER BY CT.CHALL_CREATED_AT DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 챌린지 조회 카운트 -->
+    <select id="countLatestAdminChallenges"
+            parameterType="com.godLife.project.dto.request.ChallengeSearchParamDTO"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM CHALL_TABLE CT
+        <where>
+            <!-- 상태 필터 -->
+            <if test="challState != null and challState != ''">
+                AND CT.CHALL_STATE = #{challState}
+            </if>
+
+            <!-- 카테고리 필터 -->
+            <if test="challCategoryIdx != null">
+                AND CT.CHALL_CATEGORY_IDX = #{challCategoryIdx}
+            </if>
+
+            <!-- visibility -->
+            <if test="visibilityType != null and visibilityType != ''">
+                AND UPPER(CT.VISIBILITY_TYPE) = UPPER(#{visibilityType})
+            </if>
+
+            <!-- 타입 필터 -->
+            <if test="challengeType != null and challengeType != ''">
+                AND CT.CHALLENGE_TYPE = #{challengeType}
+            </if>
+
+            <!-- 종료 조건 처리 (조회 쿼리와 동일) -->
+            <choose>
+                <!-- 종료된 이벤트 챌린지만 -->
+                <when test="challengeType == 'SPECIAL' and onlyEnded != null and onlyEnded">
+                    AND CT.CHALL_END_TIME IS NOT NULL
+                    AND CT.CHALL_END_TIME &lt;= NOW()
+                </when>
+
+                <!-- 진행중인 이벤트 챌린지만 -->
+                <when test="challengeType == 'SPECIAL' and (onlyEnded == null or !onlyEnded)">
+                    AND (CT.CHALL_END_TIME IS NULL OR CT.CHALL_END_TIME &gt; NOW())
+                </when>
+
+                <!-- 일반 챌린지 → 종료 제외 -->
+                <otherwise>
+                    AND (CT.CHALL_END_TIME IS NULL OR CT.CHALL_END_TIME &gt; NOW())
+                </otherwise>
+            </choose>
         </where>
     </select>
 
     <!-- 챌린지 수정 -->
-    <update id="modifyChallenge">
+    <update id="modifyChallenge" parameterType="com.godLife.project.dto.contents.ChallengeDTO">
         UPDATE CHALL_TABLE
-        SET CHALL_TITLE = #{challTitle},
-        CHALL_DESCRIPTION = #{challDescription},
-        CHALL_CATEGORY_IDX = #{challCategoryIdx},
-        MIN_PARTICIPATION_TIME = #{minParticipationTime},
-        MAX_PARTICIPANTS = #{maxParticipants},
-        TOTAL_CLEAR_TIME = #{totalClearTime}
-        WHERE CHALL_IDX=#{challIdx}
+        <set>
+            <if test="challTitle != null">CHALL_TITLE = #{challTitle},</if>
+            <if test="challDescription != null">CHALL_DESCRIPTION = #{challDescription},</if>
+            <if test="challCategoryIdx != null">CHALL_CATEGORY_IDX = #{challCategoryIdx},</if>
+            <if test="minParticipationTime != null">MIN_PARTICIPATION_TIME = #{minParticipationTime},</if>
+            <if test="maxParticipants != null">MAX_PARTICIPANTS = #{maxParticipants},</if>
+            <if test="totalClearTime != null">TOTAL_CLEAR_TIME = #{totalClearTime},</if>
+            <if test="challStartTime != null">CHALL_START_TIME = #{challStartTime},</if>
+            <if test="challEndTime != null">CHALL_END_TIME = #{challEndTime},</if>
+            <if test="challengeType != null">CHALLENGE_TYPE = #{challengeType},</if>
+            <if test="visibilityType != null">VISIBILITY_TYPE = #{visibilityType},</if>
+        </set>
+        WHERE CHALL_IDX = #{challIdx}
     </update>
+
+    <!-- 챌린지 존재 여부 확인 -->
+    <select id="existsById" resultType="int">
+        SELECT COUNT(1)
+        FROM CHALL_TABLE
+        WHERE CHALL_IDX = #{challIdx}
+    </select>
 
     <!-- 인증(자식 테이블) 먼저 삭제 -->
     <delete id="deleteVerifyByChallIdx" parameterType="java.lang.Long">
@@ -54,13 +156,13 @@
     </delete>
 
     <!-- 챌린지 삭제 -->
-    <delete id="deleteChallenge">
+    <delete id="deleteChallenge" parameterType="java.lang.Long">
         DELETE FROM CHALL_TABLE
         WHERE CHALL_IDX = #{challIdx}
     </delete>
 
     <!-- 챌린지 조기 종료 처리 -->
-    <update id="earlyFinishChallenge" parameterType="long">
+    <update id="earlyFinishChallenge" parameterType="java.lang.Long">
         UPDATE CHALL_TABLE
         SET
         CHALL_STATE = 'END',
@@ -70,86 +172,19 @@
         AND CHALL_STATE != 'END'
     </update>
 
+    <!-- 챌린지 공개/비공개 처리 -->
+    <update id="updateChallengeVisibility">
+        UPDATE CHALL_TABLE
+        SET VISIBILITY_TYPE = #{visibilityType}
+        WHERE CHALL_IDX = #{challIdx}
+    </update>
 
-    <!-- 관리자: 챌린지 검색 + 상태별 조회 -->
-    <select id="searchChallenges" resultType="com.godLife.project.dto.contents.ChallengeDTO">
-        SELECT
-        CT.CHALL_IDX,
-        CT.CHALL_TITLE,
-        CT.CHALL_DESCRIPTION,
-        CT.CHALL_CATEGORY_IDX,
-        CAT.CHALL_NAME,
-        CT.MAX_PARTICIPANTS,
-        CT.CHALL_END_TIME,
-        COUNT(CJ.USER_IDX) AS CURRENT_PARTICIPANTS,
-        CT.CHALL_CREATED_AT,
-        CT.CHALL_STATE
-        FROM CHALL_TABLE CT
-        JOIN CHALL_CATEGORY CAT ON CT.CHALL_CATEGORY_IDX = CAT.CHALL_CATEGORY_IDX
-        LEFT JOIN CHALL_JOIN CJ ON CT.CHALL_IDX = CJ.CHALL_IDX
-        <where>
-            <!-- 제목 검색 -->
-            <if test="challTitle != null and challTitle != ''">
-                LOWER(CT.CHALL_TITLE) LIKE CONCAT('%', LOWER(#{challTitle}), '%')
-            </if>
-            <if test="challCategory != null and challCategory != ''">
-                AND LOWER(CAT.CHALL_NAME) LIKE CONCAT('%', LOWER(#{challCategory}), '%')
-            </if>
-            <if test="challState != null and challState != ''">
-                AND CT.CHALL_STATE = #{challState}
-            </if>
-        </where>
-        GROUP BY
-        CT.CHALL_IDX,
-        CT.CHALL_TITLE,
-        CT.CHALL_DESCRIPTION,
-        CT.CHALL_CATEGORY_IDX,
-        CAT.CHALL_NAME,
-        CT.MAX_PARTICIPANTS,
-        CT.CHALL_END_TIME,
-        CT.CHALL_CREATED_AT,
-        CT.CHALL_STATE
-        <choose>
-            <when test="sort == 'challCreatedAt'">
-                ORDER BY CT.CHALL_CREATED_AT DESC
-            </when>
-            <when test="sort == 'challTitle'">
-                ORDER BY CT.CHALL_TITLE ASC
-            </when>
-            <otherwise>
-                ORDER BY CT.CHALL_IDX DESC
-            </otherwise>
-        </choose>
-        LIMIT #{size} OFFSET #{offset}
-    </select>
-
-    <!-- 관리자: 챌린지 검색 + 상태별 조회 총 게시글 수 -->
-    <select id="countSearchChallenges" resultType="int">
-        SELECT COUNT(*)
-        FROM CHALL_TABLE CT
-        JOIN CHALL_CATEGORY CAT ON CT.CHALL_CATEGORY_IDX = CAT.CHALL_CATEGORY_IDX
-        <where>
-            <!-- 제목 검색 -->
-            <if test="challTitle != null and challTitle != ''">
-                AND LOWER(CT.CHALL_TITLE) LIKE CONCAT('%', LOWER(#{challTitle}), '%')
-            </if>
-
-            <!-- 카테고리 검색 -->
-            <if test="challCategory != null and challCategory != ''">
-                AND LOWER(CAT.CHALL_NAME) LIKE CONCAT('%', LOWER(#{challCategory}), '%')
-            </if>
-
-            <!-- 상태 검색 -->
-            <if test="challState != null and challState != ''">
-                AND CT.CHALL_STATE = #{challState}
-            </if>
-        </where>
-    </select>
-
-    <!-- 챌린지 존재 확인 -->
-    <select id="existsById" resultType="int">
-        SELECT COUNT(*) FROM CHALL_TABLE WHERE CHALL_IDX = #{challIdx}
-    </select>
+    <!-- 챌린지 이벤트 처리 -->
+    <update id="updateChallengeType">
+        UPDATE CHALL_TABLE
+        SET CHALLENGE_TYPE = #{challengeType}
+        WHERE CHALL_IDX = #{challIdx}
+    </update>
 
 
 

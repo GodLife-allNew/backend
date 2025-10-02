@@ -2,6 +2,8 @@ package com.godLife.project.mapper;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
 import com.godLife.project.dto.infos.ChallengeJoinDTO;
+import com.godLife.project.dto.request.ChallRequestDTO;
+import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -14,19 +16,11 @@ import java.util.Map;
 @Mapper
 public interface ChallengeMapper {
 
-    // 최신 챌린지 조회 (페이징 적용)
-    List<ChallengeDTO> getLatestChallenges(@Param("offset") int offset, @Param("size") int size);
+    // 통합 챌린지 조회 (필터 + 페이징)
+    List<ChallengeDTO> getLatestChallenges(ChallengeSearchParamDTO param);
+    // 통합 챌린지 개수 조회
+    int countLatestChallenges(ChallengeSearchParamDTO param);
 
-    // 최신 챌린지 총 개수 조회
-    int countLatestChallenges();
-
-    // 카테고리별 챌린지 조회 (페이징 적용)
-    List<ChallengeDTO> getChallengesByCategoryId(@Param("challCategoryIdx") int challCategoryIdx,
-                                                 @Param("offset") int offset,
-                                                 @Param("size") int size);
-
-    // 카테고리별 챌린지 총 개수 조회
-    int countChallengesByCategoryId(@Param("challCategoryIdx") int challCategoryIdx);
 
     // 챌린지 상세조회
     ChallengeDTO challengeDetail(Long challIdx);
@@ -98,7 +92,5 @@ public interface ChallengeMapper {
     );
     // 진행 중인 챌린지를 종료 상태로 자동 변경
     void updateChallengesToEndStatus(@Param("now") LocalDateTime now);
-
-
 
 }

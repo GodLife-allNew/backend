@@ -2,6 +2,8 @@ package com.godLife.project.service.impl;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
 import com.godLife.project.dto.infos.ChallengeJoinDTO;
+import com.godLife.project.dto.request.ChallRequestDTO;
+import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.ChallengeVerifyDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
 import com.godLife.project.enums.ChallengeState;
@@ -30,31 +32,21 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     // ----------------- 최신 챌린지 조회 (페이징 적용) -----------------
     @Override
-    public List<ChallengeDTO> getLatestChallenges(int page, int size) {
-        // 진행 중인 챌린지를 종료 상태로 자동 변경
-        challengeMapper.updateChallengesToEndStatus(LocalDateTime.now());
-        int offset = (page - 1) * size;
-        return challengeMapper.getLatestChallenges(offset, size);
+    public List<ChallengeDTO> getLatestChallenges(ChallengeSearchParamDTO param) {
+        param.setVisibilityType("PUBLIC"); // 공개된 챌린지만 조회되도록 강제
+        // offset 계산
+        int offset = (param.getPage() - 1) * param.getSize();
+        param.setOffset(offset);
+
+        return challengeMapper.getLatestChallenges(param);
     }
-    // 최신 챌린지 총 개수 조회
+    // 챌린지 페이징을 위한 총 개수 확인
     @Override
-    public int getTotalLatestChallenges() {
-        return challengeMapper.countLatestChallenges();
+    public int countLatestChallenges(ChallengeSearchParamDTO param) {
+        return challengeMapper.countLatestChallenges(param);
     }
 
 
-    // -----------------카테고리별 챌린지 조회 (페이징 적용) -----------------
-    @Override
-    public List<ChallengeDTO> getChallengesByCategoryId(int categoryIdx, int page, int size) {
-        challengeMapper.updateChallengesToEndStatus(LocalDateTime.now());
-        int offset = (page - 1) * size;
-        return challengeMapper.getChallengesByCategoryId(categoryIdx, offset, size);
-    }
-    // 카테고리별 챌린지 총 개수 조회
-    @Override
-    public int getTotalChallengesByCategory(int categoryIdx) {
-        return challengeMapper.countChallengesByCategoryId(categoryIdx);
-    }
 
 
     // ----------------- 챌린지 상세 조회 -----------------
