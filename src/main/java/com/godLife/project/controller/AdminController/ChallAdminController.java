@@ -1,6 +1,7 @@
 package com.godLife.project.controller.AdminController;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
+import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.handler.GlobalExceptionHandler;
 import com.godLife.project.service.interfaces.AdminInterface.ChallAdminService;
 import jakarta.validation.Valid;
@@ -23,7 +24,46 @@ public class ChallAdminController {
   @Autowired
   private final ChallAdminService challAdminService;
 
-  public ChallAdminController(ChallAdminService challAdminService){this.challAdminService = challAdminService;}
+  public ChallAdminController(ChallAdminService challAdminService) {
+    this.challAdminService = challAdminService;
+  }
+
+  // -------------------- 최신 챌린지 조회 ----------------
+  @GetMapping("/latest")
+  public ResponseEntity<?> getLatestAdminChallenges(
+          @RequestParam(required = false) String challState,
+          @RequestParam(required = false) Integer challCategoryIdx,
+          @RequestParam(required = false) String visibilityType,
+          @RequestParam(required = false) String challengeType,
+          @RequestParam(required = false, defaultValue = "false") Boolean onlyActive,
+          @RequestParam(required = false, defaultValue = "false") Boolean onlyEnded,
+          @RequestParam(defaultValue = "1") int page,
+          @RequestParam(defaultValue = "10") int size
+  ) {
+    ChallengeSearchParamDTO param = new ChallengeSearchParamDTO();
+    param.setChallState(challState);
+    param.setChallCategoryIdx(challCategoryIdx);
+    param.setVisibilityType(visibilityType);
+    param.setChallengeType(challengeType);
+    param.setOnlyActive(onlyActive);
+    param.setOnlyEnded(onlyEnded);
+    param.setPage(page);
+    param.setSize(size);
+
+    List<ChallengeDTO> challenges = challAdminService.getLatestAdminChallenges(param);
+    int totalChallenges = challAdminService.countLatestAdminChallenges(param);
+    int totalPages = (int) Math.ceil((double) totalChallenges / size);
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", 200);
+    response.put("message", "챌린지 조회 성공");
+    response.put("challenges", challenges);
+    response.put("totalPages", totalPages);
+    response.put("currentPage", page);
+    response.put("pageSize", size);
+
+    return ResponseEntity.ok(response);
+  }
 
   // 챌린지 생성 API
   @PostMapping("/create")
@@ -119,8 +159,7 @@ public class ChallAdminController {
   @PatchMapping("/delete")
   public ResponseEntity<Map<String, Object>> deleteChallenge(
           @Valid @RequestBody ChallengeDTO challengeDTO,
-          BindingResult result)
-  {
+          BindingResult result) {
     // 유효성 검사 실패 시 에러 반환
     if (result.hasErrors()) {
       return ResponseEntity.badRequest().body(handler.getValidationErrors(result));
@@ -149,6 +188,73 @@ public class ChallAdminController {
             .body(handler.createResponse(deleteResult, msg));
   }
 
+  // -------------  챌린지 상세 조회  -----------------
+  @GetMapping("/detail/{challIdx}")
+  public ChallengeDTO getChallengeDetail(@PathVariable Long challIdx) {
+    // 서비스에서 챌린지 상세 정보 조회 및 업데이트
+    return challAdminService.getChallengeDetail(challIdx);
+  }
+
+
+
+  // ----------- 챌린지 공개 / 비공개 상태 변경
+  @PostMapping("/visibility/{challIdx}")
+  public ResponseEntity<Map<String, Object>> updateVisibility(
+          @PathVariable Long challIdx,   // URL에서 가져옴
+          @RequestParam String visibilityType) {  // 쿼리 파라미터로 가져옴
+
+    // 챌린지 존재 여부 확인
+    if (!challAdminService.existsById(challIdx)) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+              .body(handler.createResponse(404, "요청하신 챌린지가 존재하지 않습니다."));
+    }
+
+    // 공개/비공개 서비스 실행
+    int updateResult = challAdminService.updateChallengeVisibility(challIdx, visibilityType);
+
+    String msg = switch (updateResult) {
+      case 200 -> "챌린지 공개 상태 변경 완료";
+      case 403 -> "관리자 권한이 없습니다.";
+      case 404 -> "요청하신 챌린지가 존재하지 않습니다.";
+      case 500 -> "서버 내부 오류로 상태를 변경하지 못했습니다.";
+      default -> "알 수 없는 오류가 발생했습니다.";
+    };
+
+    return ResponseEntity.status(handler.getHttpStatus(updateResult))
+            .body(handler.createResponse(updateResult, msg));
+  }
+
+
+  // -------------- 챌린지 이벤트 처리 ----------------
+  @PostMapping("type/{challIdx}")
+  public ResponseEntity<Map<String, Object>> updateChallengeType(
+          @PathVariable Long challIdx,
+          @RequestParam String challengeType){
+
+    // 챌린지 존재여부 확인
+    if(!challAdminService.existsById(challIdx)){
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+              .body(handler.createResponse(404, "요청하신 챌린지가 존재하지 않습니다."));
+    }
+
+    // 이벤트 서비스 실행
+    int updateResult = challAdminService.updateChallengeType(challIdx, challengeType);
+
+    String msg = switch (updateResult) {
+      case 200 -> "챌린지 타입이 변경되었습니다.";
+      case 403 -> "관리자 권한이 없습니다.";
+      case 404 -> "요청하신 챌린지가 존재하지 않습니다.";
+      case 500 -> "서버 내부 오류로 타입을 변경하지 못했습니다.";
+      default -> "알 수 없는 오류가 발생했습니다.";
+    };
+
+    return ResponseEntity.status(handler.getHttpStatus(updateResult))
+            .body(handler.createResponse(updateResult, msg));
+  }
+
+
+
+
 
   //  -----------  챌린지 조기 종료  --------------
   @PutMapping("/earlyFinish/{challIdx}")
@@ -161,28 +267,4 @@ public class ChallAdminController {
     }
   }
 
-  //  -------------- 챌린지 검색 API (제목, 카테고리) -------------
-  @GetMapping("/search")
-  public ResponseEntity<Map<String, Object>> searchChallenges(
-          @RequestParam(required = false) String challTitle,
-          @RequestParam(required = false) String challCategory,
-          @RequestParam(required = false) String challState, // 상태 필터 추가
-          @RequestParam(defaultValue = "1") int page,
-          @RequestParam(defaultValue = "10") int size,
-          @RequestParam(defaultValue = "challCreatedAt") String sort
-  ) {
-    Map<String, Object> response = challAdminService.searchChallenges(
-            challTitle, challCategory, challState, page, size, sort
-    );
-
-    return ResponseEntity.ok(response);
-  }
-
-
-  // -------------  챌린지 상세 조회  -----------------
-  @GetMapping("/detail/{challIdx}")
-  public ChallengeDTO getChallengeDetail(@PathVariable Long challIdx) {
-    // 서비스에서 챌린지 상세 정보 조회 및 업데이트
-    return challAdminService.getChallengeDetail(challIdx);
-  }
 }

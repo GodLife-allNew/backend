@@ -8,9 +8,7 @@ import com.godLife.project.service.interfaces.AdminInterface.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +32,13 @@ public class AdminUserServiceImpl implements AdminUserService {
     public int banUser(int userIdx) {
         return adminUserMapper.banUserByIdx(userIdx);
     }
+
+    // 유저 존재 조회
+    public int existsByUserIdx(int userIdx) { return adminUserMapper.existsByUserIdx(userIdx);}
+
+    // 현재 정지상태 조회 (0 or 1)
+    public int getBanStatus(int userIdx) {return adminUserMapper.selectBanStatusByIdx(userIdx);}
+
 
     //                       권한 관리
 

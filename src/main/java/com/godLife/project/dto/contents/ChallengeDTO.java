@@ -72,4 +72,9 @@ public class ChallengeDTO {
 
     private boolean isJoined;
 
+    @Schema(description = "챌린지 공개 여부", example = "PUBLIC")
+    private String visibilityType;
+
+    @Schema(description = "챌린지 타입 (일반챌린지/이벤트 챌린지", example = "SPECIAL")
+    private String challengeType;
 }
