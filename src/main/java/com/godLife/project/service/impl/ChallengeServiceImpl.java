@@ -33,7 +33,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     // ----------------- 최신 챌린지 조회 (페이징 적용) -----------------
     @Override
     public List<ChallengeDTO> getLatestChallenges(ChallengeSearchParamDTO param) {
-        param.setVisibilityType("PUBLIC"); // 공개된 챌린지만 조회되도록 강제
+//        param.setVisibilityType("PUBLIC"); // 공개된 챌린지만 조회되도록 강제
         // offset 계산
         int offset = (param.getPage() - 1) * param.getSize();
         param.setOffset(offset);

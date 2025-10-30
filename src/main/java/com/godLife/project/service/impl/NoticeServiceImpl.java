@@ -4,11 +4,13 @@ import com.godLife.project.dto.contents.NoticeDTO;
 import com.godLife.project.mapper.NoticeMapper;
 import com.godLife.project.service.interfaces.NoticeService;
 import com.godLife.project.utils.HtmlSanitizer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@Slf4j
 public class NoticeServiceImpl implements NoticeService {
   private NoticeMapper noticeMapper;
 
@@ -45,13 +47,20 @@ public class NoticeServiceImpl implements NoticeService {
   // 공지 작성
   public int createNotice(NoticeDTO noticeDTO) {
 
-    // 입력된 HTML 정제 (위험한 태그 제거)
-    String safeContent = HtmlSanitizer.sanitize(noticeDTO.getNoticeSub());
-    noticeDTO.setNoticeSub(safeContent);
+    try {
+      // 입력된 HTML 정제 (위험한 태그 제거)
+      String safeContent = HtmlSanitizer.sanitize(noticeDTO.getNoticeSub());
+      noticeDTO.setNoticeSub(safeContent);
 
-    // 저장
-    int result = noticeMapper.createNotice(noticeDTO);
-    return result == 1 ? 201 : 500; // 1이면 성공, 그 외는 서버 에러 처리
+      System.out.println(noticeDTO);
+
+      // 저장
+      int result = noticeMapper.createNotice(noticeDTO);
+      return result == 1 ? 201 : 500; // 1이면 성공, 그 외는 서버 에러 처리
+    } catch (Exception e) {
+      log.error(String.valueOf(e));
+      throw e;
+    }
   }
 
   // 공지 수정
