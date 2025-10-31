@@ -35,7 +35,6 @@ public class ChallAdminController {
           @RequestParam(required = false) Integer challCategoryIdx,
           @RequestParam(required = false) String visibilityType,
           @RequestParam(required = false) String challengeType,
-          @RequestParam(required = false, defaultValue = "false") Boolean onlyActive,
           @RequestParam(required = false, defaultValue = "false") Boolean onlyEnded,
           @RequestParam(defaultValue = "1") int page,
           @RequestParam(defaultValue = "10") int size
@@ -45,7 +44,6 @@ public class ChallAdminController {
     param.setChallCategoryIdx(challCategoryIdx);
     param.setVisibilityType(visibilityType);
     param.setChallengeType(challengeType);
-    param.setOnlyActive(onlyActive);
     param.setOnlyEnded(onlyEnded);
     param.setPage(page);
     param.setSize(size);
@@ -226,7 +224,7 @@ public class ChallAdminController {
 
 
   // -------------- 챌린지 이벤트 처리 ----------------
-  @PostMapping("type/{challIdx}")
+  @PostMapping("/type/{challIdx}")
   public ResponseEntity<Map<String, Object>> updateChallengeType(
           @PathVariable Long challIdx,
           @RequestParam String challengeType){

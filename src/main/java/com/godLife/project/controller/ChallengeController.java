@@ -45,7 +45,6 @@ public class ChallengeController {
           @RequestParam(required = false) Integer challCategoryIdx,
           @RequestParam(required = false, defaultValue = "PUBLIC") String visibilityType,
           @RequestParam(required = false) String challengeType,
-          @RequestParam(required = false, defaultValue = "false") Boolean onlyActive,
           @RequestParam(required = false, defaultValue = "false") Boolean onlyEnded,
           @RequestParam(defaultValue = "1") int page,
           @RequestParam(defaultValue = "10") int size
@@ -55,7 +54,6 @@ public class ChallengeController {
     param.setChallCategoryIdx(challCategoryIdx);
     param.setVisibilityType(visibilityType);
     param.setChallengeType(challengeType);
-    param.setOnlyActive(onlyActive);
     param.setOnlyEnded(onlyEnded);
     param.setPage(page);
     param.setSize(size);

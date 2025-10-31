@@ -84,7 +84,7 @@
     </select>
 
     <!-- 챌린지 조회 카운트 -->
-    <select id="countLatestChallenges"
+    <select id="countLatestAdminChallenges"
             parameterType="com.godLife.project.dto.request.ChallengeSearchParamDTO"
             resultType="int">
         SELECT COUNT(*)

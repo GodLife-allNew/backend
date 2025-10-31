@@ -8,7 +8,6 @@ public class ChallengeSearchParamDTO {
     private Integer challCategoryIdx;
     private String visibilityType;
     private String challengeType;
-    private Boolean onlyActive; // 종료 제외 여부
     private Boolean onlyEnded;  // 종료된 것만 조회 여부
 
     private int page;
