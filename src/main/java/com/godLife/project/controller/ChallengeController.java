@@ -43,7 +43,7 @@ public class ChallengeController {
   public ResponseEntity<?> getLatestChallenges(
           @RequestParam(required = false) String challState,
           @RequestParam(required = false) Integer challCategoryIdx,
-          @RequestParam(required = false, defaultValue = "PUBLIC") String visibilityType,
+          @RequestParam(required = false) String visibilityType,
           @RequestParam(required = false) String challengeType,
           @RequestParam(required = false, defaultValue = "false") Boolean onlyEnded,
           @RequestParam(defaultValue = "1") int page,
