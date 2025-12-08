@@ -45,10 +45,10 @@ jobs:
     steps:
       - name: Set target IP
         run: |
-          STATUS=$(curl -L -o /dev/null -w "%{http_code}" "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
+          STATUS=$(curl -L -k -o /dev/null -w "%{http_code}" "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
           echo $STATUS
           if [ $STATUS = 200 ]; then
-            CURRENT_UPSTREAM=$(curl -L -s "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
+            CURRENT_UPSTREAM=$(curl -L -k -s "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
           else
             CURRENT_UPSTREAM=green
           fi
