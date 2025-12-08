@@ -94,7 +94,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
             set -e
-            sudo docker exec nginxserver bash -c \"echo 'set \\\$service_url ${{ env.TARGET_UPSTREAM }};' > /etc/nginx/conf.d/service-env.inc\"
+            echo 'set \\\$service_url http://${{ env.TARGET_UPSTREAM }};' | sudo tee /home/ubuntu/nginx/service-env.inc
             sudo docker exec nginxserver nginx -s reload
           "
   
