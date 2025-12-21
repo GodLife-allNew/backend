@@ -13,7 +13,7 @@ public interface PlanAdminService {
   // 관리자 루틴 리스트 조회 (페이징 처리)
   List<CustomAdminPlanListDTO> selectAdminPlanList(int page, int size);
   // 전체 관리자 루틴 개수 조회
-  int getTotalAdminPlanCount();
+  int getTotalAdminPlanCount(int admin);
   // 관리자 루틴 카테고리 조회 (페이징 처리)
   List<CustomAdminPlanListDTO> selectAdminPlanListByTargetIdx(
           @Param("targetIdx") Integer targetIdx,
