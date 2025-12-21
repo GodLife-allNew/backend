@@ -15,16 +15,26 @@
         FROM PLAN_TABLE r
         INNER JOIN USER_TABLE u ON r.USER_IDX = u.USER_IDX
         WHERE u.AUTHORITY_IDX BETWEEN 2 AND 7
+        AND r.IS_DELETED = 0
         ORDER BY r.PLAN_SUB_DATE DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
 
-    <select id="getTotalAdminPlanCount" resultType="int">
+    <select id="getTotalAdminPlanCount" parameterType="int" resultType="int">
         SELECT COUNT(*)
         FROM PLAN_TABLE r
         INNER JOIN USER_TABLE u ON r.USER_IDX = u.USER_IDX
-        WHERE u.AUTHORITY_IDX BETWEEN 2 AND 7
+        <choose>
+            <when test="admin == 1">
+                WHERE u.AUTHORITY_IDX BETWEEN 2 AND 7
+            </when>
+            <otherwise>
+                WHERE u.AUTHORITY_IDX = 1
+            </otherwise>
+        </choose>
+
+        AND r.IS_DELETED = 0
     </select>
 
     <select id="selectAdminPlanListByTargetIdx" resultType="com.godLife.project.dto.list.customDTOs.CustomAdminPlanListDTO">
@@ -38,6 +48,7 @@
         INNER JOIN USER_TABLE u ON r.USER_IDX = u.USER_IDX
         WHERE r.TARGET_IDX = #{targetIdx}
         AND u.AUTHORITY_IDX BETWEEN 2 AND 7
+        AND r.IS_DELETED = 0
         ORDER BY r.PLAN_SUB_DATE DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
@@ -52,6 +63,7 @@
         FROM PLAN_TABLE r
         INNER JOIN USER_TABLE u ON r.USER_IDX = u.USER_IDX
         WHERE u.AUTHORITY_IDX = 1
+        AND r.IS_DELETED = 0
         ORDER BY r.PLAN_SUB_DATE DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>

@@ -40,7 +40,7 @@ public class PlanAdminController {
           @RequestParam(defaultValue = "10") int size) {
 
     List<CustomAdminPlanListDTO> plans = planAdminService.selectAdminPlanList(page, size);
-    int totalPlans = planAdminService.getTotalAdminPlanCount();
+    int totalPlans = planAdminService.getTotalAdminPlanCount(1);
     int totalPages = (int) Math.ceil((double) totalPlans / size);
 
     if (plans.isEmpty()) {
@@ -72,7 +72,7 @@ public class PlanAdminController {
           @RequestParam(defaultValue = "10") int size) {
 
     List<CustomAdminPlanListDTO> plans = planAdminService.selectAdminPlanListByTargetIdx(targetIdx, page, size);
-    int totalPlans = planAdminService.getTotalAdminPlanCount();
+    int totalPlans = planAdminService.getTotalAdminPlanCount(1);
     int totalPages = (int) Math.ceil((double) totalPlans / size);
 
     if (plans.isEmpty()) {
@@ -97,7 +97,7 @@ public class PlanAdminController {
           @RequestParam(defaultValue = "10") int size) {
 
     List<CustomAdminPlanListDTO> plans = planAdminService.selectPlanList(page, size);
-    int totalPlans = planAdminService.getTotalAdminPlanCount();
+    int totalPlans = planAdminService.getTotalAdminPlanCount(0);
     int totalPages = (int) Math.ceil((double) totalPlans / size);
 
     if (plans.isEmpty()) {

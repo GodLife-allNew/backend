@@ -26,8 +26,8 @@ public class PlanAdminServiceImpl implements PlanAdminService {
   }
   // 전체 관리자 루틴 개수 조회
   @Override
-  public int getTotalAdminPlanCount() {
-    return planAdminMapper.getTotalAdminPlanCount();
+  public int getTotalAdminPlanCount(int admin) {
+    return planAdminMapper.getTotalAdminPlanCount(admin);
   }
 
   // 관리자 루틴 카테고리 조회
