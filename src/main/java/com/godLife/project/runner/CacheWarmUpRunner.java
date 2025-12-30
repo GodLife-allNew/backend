@@ -23,22 +23,22 @@ public class CacheWarmUpRunner implements ApplicationRunner {
   @Override
   public void run(ApplicationArguments args) {
     log.info("ApplicationRunner - 캐시 워밍업 시작..");
-//    log.info("탑 메뉴 카테고리 워밍업 준비..");
-//    redisService.saveListData("category::topMenu", categoryService.getProcessedAllTopCategories(), 'n', 0);
-//    log.info("직업 카테고리 워밍업 준비..");
-//    redisService.saveListData("category::job", categoryService.getAllJobCategories(), 'n', 0);
-//    log.info("목표 카테고리 워밍업 준비..");
-//    redisService.saveListData("category::target", categoryService.getAllTargetCategories(), 'n', 0);
-//    log.info("챌린지 카테고리 워밍업 준비..");
-//    redisService.saveListData("category::chall", categoryService.getAllChallCategories(), 'n', 0);
-//    log.info("아이콘 정보 워밍업 준비..");
-//    redisService.saveListData("category::userIcon", categoryService.getUserIconInfos(), 'n', 0);
-//    log.info("관리자 아이콘 정보 워밍업 준비..");
-//    redisService.saveListData("category::adminIcon", categoryService.getAllIconInfos(), 'n', 0);
-//    log.info("불꽃 정보 워밍업 준비..");
-//    redisService.saveListData("category::fire", categoryService.getAllFireInfos(), 'n', 0);
-//    log.info("유저 레벨 정보 워밍업 준비..");
-//    redisService.saveListData("category::userLv", categoryService.getAllUserLevelInfos(), 'n', 0);
+    log.info("탑 메뉴 카테고리 워밍업 준비..");
+    redisService.saveListData("category::topMenu", categoryService.getProcessedAllTopCategories(), 'n', 0);
+    log.info("직업 카테고리 워밍업 준비..");
+    redisService.saveListData("category::job", categoryService.getAllJobCategories(), 'n', 0);
+    log.info("목표 카테고리 워밍업 준비..");
+    redisService.saveListData("category::target", categoryService.getAllTargetCategories(), 'n', 0);
+    log.info("챌린지 카테고리 워밍업 준비..");
+    redisService.saveListData("category::chall", categoryService.getAllChallCategories(), 'n', 0);
+    log.info("아이콘 정보 워밍업 준비..");
+    redisService.saveListData("category::userIcon", categoryService.getUserIconInfos(), 'n', 0);
+    log.info("관리자 아이콘 정보 워밍업 준비..");
+    redisService.saveListData("category::adminIcon", categoryService.getAllIconInfos(), 'n', 0);
+    log.info("불꽃 정보 워밍업 준비..");
+    redisService.saveListData("category::fire", categoryService.getAllFireInfos(), 'n', 0);
+    log.info("유저 레벨 정보 워밍업 준비..");
+    redisService.saveListData("category::userLv", categoryService.getAllUserLevelInfos(), 'n', 0);
     log.info("대기중 문의 큐에 업로드 준비..");
     List<Integer> qnaIndexes = qnaMapper.getlistWaitQnaIdx();
     if (qnaIndexes != null && !qnaIndexes.isEmpty()) {
