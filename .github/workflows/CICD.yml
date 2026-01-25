@@ -37,16 +37,22 @@ jobs:
 
       - name: Push Docker
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/godlife_server:latest
-        
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      EC2_USER: ${{ secrets.EC2_USER }}
+      EC2_HOST: ${{ secrets.GODLIFE_SERVER_IP }}
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
+
       - name: Determine current upstream
+        id: determine_upstream
         run: |
-          STATUS=$(curl -L -k -o /dev/null -w "%{http_code}" "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
-          if [ $STATUS = 200 ]; then
-            CURRENT_UPSTREAM=$(curl -L -k -s "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
+          STATUS=$(curl -L -k -o /dev/null -w "%{http_code}" "http://${EC2_HOST}/api/env")
+          if [ "$STATUS" = "200" ]; then
+            CURRENT_UPSTREAM=$(curl -L -k -s "http://${EC2_HOST}/api/env")
           else
             CURRENT_UPSTREAM=green
           fi
@@ -65,34 +71,42 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: Deploy Docker on EC2
+      - name: Deploy new server on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
             set -e
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/godlife_server:latest
+            TARGET_UPSTREAM=$TARGET_UPSTREAM
+            echo 'Pulling latest Docker image...'
+            sudo docker pull $DOCKERHUB_USER/godlife_server:latest
+            echo 'Starting \$TARGET_UPSTREAM container...'
             sudo docker compose -f docker-compose-\$TARGET_UPSTREAM.yml up -d
           "
 
       - name: Health check new server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
-            until curl -s -o /dev/null -w '%{http_code}' http://${{ secrets.GODLIFE_SERVER_IP }}/api/hc | grep 200; do
-              echo 'Waiting for \$TARGET_UPSTREAM to be healthy...'
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+            TARGET_UPSTREAM=$TARGET_UPSTREAM
+            echo 'Waiting for \$TARGET_UPSTREAM to be healthy...'
+            until sudo docker exec \$TARGET_UPSTREAM curl -s -o /dev/null -w '%{http_code}' http://localhost:9090/api/hc | grep 200; do
+              echo 'Waiting...'
               sleep 5
             done
           "
 
-      - name: Change nginx upstream
+      - name: Update nginx upstream
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
-            echo 'set \$service_url \$TARGET_UPSTREAM:9090;' | sudo tee /home/${{ secrets.EC2_USER }}/nginx/conf.d/service-env.inc > /dev/null
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+            TARGET_UPSTREAM=$TARGET_UPSTREAM
+            echo 'set \$service_url \$TARGET_UPSTREAM:9090;' | sudo tee /home/$EC2_USER/nginx/conf.d/service-env.inc > /dev/null
+            echo 'Reloading nginx...'
             sudo docker exec nginxserver nginx -s reload
           "
 
       - name: Stop previous server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
-            set -e
-            sudo docker stop \$CURRENT_UPSTREAM
-            sudo docker rm \$CURRENT_UPSTREAM
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+            CURRENT_UPSTREAM=$CURRENT_UPSTREAM
+            echo 'Stopping previous container \$CURRENT_UPSTREAM...'
+            sudo docker stop \$CURRENT_UPSTREAM || true
+            sudo docker rm \$CURRENT_UPSTREAM || true
           "
