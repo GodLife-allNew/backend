@@ -3,8 +3,6 @@ name: CICD
 on:
   push:
     branches: [ "main" ]
-  # pull_request:
-    # branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
@@ -15,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Install JDK 17
         uses: actions/setup-java@v3
         with:
@@ -34,46 +33,38 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker
-        run: docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/godlife_server .
+        run: docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/godlife_server:latest .
+
       - name: Push Docker
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/godlife_server:latest
         
   deploy:
     needs: build
     runs-on: ubuntu-latest
-  
     steps:
-      - name: Set target IP
+      - name: Determine current upstream
         run: |
           STATUS=$(curl -L -k -o /dev/null -w "%{http_code}" "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
-          echo $STATUS
           if [ $STATUS = 200 ]; then
             CURRENT_UPSTREAM=$(curl -L -k -s "http://${{ secrets.GODLIFE_SERVER_IP }}/api/env")
           else
             CURRENT_UPSTREAM=green
           fi
-          echo CURRENT_UPSTREAM=$CURRENT_UPSTREAM >> $GITHUB_ENV
-  
-          if [ $CURRENT_UPSTREAM = blue ]; then
-            echo "CURRENT_PORT=9090" >> $GITHUB_ENV
-            echo "STOPPED_PORT=9091" >> $GITHUB_ENV
-            echo "TARGET_UPSTREAM=green" >> $GITHUB_ENV
-          elif [ $CURRENT_UPSTREAM = green ]; then
-            echo "CURRENT_PORT=9091" >> $GITHUB_ENV
-            echo "STOPPED_PORT=9090" >> $GITHUB_ENV
-            echo "TARGET_UPSTREAM=blue" >> $GITHUB_ENV
+
+          if [ "$CURRENT_UPSTREAM" = "blue" ]; then
+            TARGET_UPSTREAM=green
           else
-            echo "error"
-            exit 1
+            TARGET_UPSTREAM=blue
           fi
-  
-      # SSH Key 로드 (공식 권장)
+
+          echo "CURRENT_UPSTREAM=$CURRENT_UPSTREAM" >> $GITHUB_ENV
+          echo "TARGET_UPSTREAM=$TARGET_UPSTREAM" >> $GITHUB_ENV
+
       - name: Start SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-  
-      # Docker Pull & Compose 실행
+
       - name: Deploy Docker on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
@@ -81,28 +72,27 @@ jobs:
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/godlife_server:latest
             sudo docker compose -f docker-compose-${{ env.TARGET_UPSTREAM }}.yml up -d
           "
-  
-      - name: Check deploy server URL
-        uses: jtalk/url-health-check-action@v3
-        with:
-          url: http://${{ secrets.GODLIFE_SERVER_IP }}:${{ env.STOPPED_PORT }}/api/env
-          max-attempts: 5
-          retry-delay: 10s
-  
-      # nginx upstream 변경
+
+      - name: Health check new server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
+            until curl -s -o /dev/null -w '%{http_code}' http://${{ secrets.GODLIFE_SERVER_IP }}/api/hc | grep 200; do
+              echo 'Waiting for ${{ env.TARGET_UPSTREAM }} to be healthy...'
+              sleep 5
+            done
+          "
+
       - name: Change nginx upstream
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
-            echo 'set \$service_url ${{ env.TARGET_UPSTREAM }};' | sudo tee /home/${{ secrets.EC2_USER }}/nginx/conf.d/service-env.inc > /dev/null
+            echo 'set \$service_url ${{ env.TARGET_UPSTREAM }}:9090;' | sudo tee /home/${{ secrets.EC2_USER }}/nginx/conf.d/service-env.inc > /dev/null
             sudo docker exec nginxserver nginx -s reload
           "
-  
-      # 이전 서버 stop
-      - name: Stop current server
+
+      - name: Stop previous server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
             set -e
             sudo docker stop ${{ env.CURRENT_UPSTREAM }}
             sudo docker rm ${{ env.CURRENT_UPSTREAM }}
           "
-  
