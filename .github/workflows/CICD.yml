@@ -70,14 +70,14 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
             set -e
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/godlife_server:latest
-            sudo docker compose -f docker-compose-${{ env.TARGET_UPSTREAM }}.yml up -d
+            sudo docker compose -f docker-compose-\$TARGET_UPSTREAM.yml up -d
           "
 
       - name: Health check new server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
             until curl -s -o /dev/null -w '%{http_code}' http://${{ secrets.GODLIFE_SERVER_IP }}/api/hc | grep 200; do
-              echo 'Waiting for ${{ env.TARGET_UPSTREAM }} to be healthy...'
+              echo 'Waiting for \$TARGET_UPSTREAM to be healthy...'
               sleep 5
             done
           "
@@ -85,7 +85,7 @@ jobs:
       - name: Change nginx upstream
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
-            echo 'set \$service_url ${{ env.TARGET_UPSTREAM }}:9090;' | sudo tee /home/${{ secrets.EC2_USER }}/nginx/conf.d/service-env.inc > /dev/null
+            echo 'set \$service_url \$TARGET_UPSTREAM:9090;' | sudo tee /home/${{ secrets.EC2_USER }}/nginx/conf.d/service-env.inc > /dev/null
             sudo docker exec nginxserver nginx -s reload
           "
 
@@ -93,6 +93,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} "
             set -e
-            sudo docker stop ${{ env.CURRENT_UPSTREAM }}
-            sudo docker rm ${{ env.CURRENT_UPSTREAM }}
+            sudo docker stop \$CURRENT_UPSTREAM
+            sudo docker rm \$CURRENT_UPSTREAM
           "
