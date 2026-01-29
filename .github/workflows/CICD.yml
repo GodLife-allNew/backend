@@ -60,38 +60,29 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Start SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-
-      - name: Create .env file locally
-        run: |
-          cat > /tmp/env_file << EOF
-          DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          REDIS_HOST=redis
-          REDIS_PORT=6379
-          DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_TAG=latest
-          TZ=Asia/Seoul
-          EOF
-
-      - name: Transfer .env to EC2
-        run: |
-          scp -o StrictHostKeyChecking=no /tmp/env_file ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }}:/tmp/.env_upload
-
-      - name: Deploy to EC2 using deploy script
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} << 'ENDSSH'
+          host: ${{ secrets.GODLIFE_SERVER_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
             set -e
-            
             cd /home/ubuntu/app
             
-            # 임시 파일을 .env로 이동
-            mv /tmp/.env_upload .env
+            # .env 파일 생성
+            cat > .env << 'EOF'
+            DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            IMAGE_TAG=latest
+            TZ=Asia/Seoul
+            EOF
+            
             chmod 600 .env
             echo "✓ Environment file updated"
             
@@ -107,11 +98,14 @@ jobs:
               ./scripts/rollback.sh
               exit 1
             fi
-          ENDSSH
 
       - name: Verify deployment
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} << 'ENDSSH'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.GODLIFE_SERVER_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
             cd /home/ubuntu/app
             
             echo "=== Current container status ==="
@@ -130,11 +124,13 @@ jobs:
             ACTIVE_CONTAINER=$(cat ./nginx/conf.d/service-env.inc | grep -oP '(?<=set \$service_url )\w+' | cut -d: -f1)
             echo "Active container: $ACTIVE_CONTAINER"
             docker exec $ACTIVE_CONTAINER wget -qO- http://localhost:9090/api/hc || echo "Direct check failed"
-          ENDSSH
 
       - name: Cleanup old Docker images
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} << 'ENDSSH'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.GODLIFE_SERVER_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
             echo "🧹 Cleaning up old Docker images..."
             docker image prune -f
-          ENDSSH
