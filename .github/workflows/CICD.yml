@@ -65,26 +65,30 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
+      - name: Create .env file locally
+        run: |
+          cat > /tmp/env_file << EOF
+          DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG=latest
+          TZ=Asia/Seoul
+          EOF
+
+      - name: Transfer .env to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no /tmp/env_file ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }}:/home/ubuntu/app/.env
+
       - name: Deploy to EC2 using deploy script
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} << 'ENDSSH'
             set -e
             
             cd /home/ubuntu/app
-            
-            # .env 파일 생성 (매번 최신 정보로 업데이트)
-            printf '%s\n' \
-              "DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" \
-              "DB_NAME=${{ secrets.DB_NAME }}" \
-              "DB_USER=${{ secrets.DB_USER }}" \
-              "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
-              "REDIS_HOST=redis" \
-              "REDIS_PORT=6379" \
-              "DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" \
-              "IMAGE_TAG=latest" \
-              "TZ=Asia/Seoul" \
-              > .env
-            
             chmod 600 .env
             echo "✓ Environment file updated"
             
