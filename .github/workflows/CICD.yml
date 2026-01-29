@@ -74,23 +74,7 @@ jobs:
             # 작업 디렉토리로 이동
             cd /home/ubuntu/app
             
-            # .env 파일 업데이트
-            cat > .env <<EOF
-          DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          REDIS_HOST=redis
-          REDIS_PORT=6379
-          DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_TAG=latest
-          TZ=Asia/Seoul
-          EOF
-            
-            chmod 600 .env
-            
             # 배포 스크립트 실행
-            chmod +x scripts/deploy.sh
             echo "🚀 Starting deployment..."
             ./scripts/deploy.sh
             
@@ -99,7 +83,6 @@ jobs:
               echo "✅ Deployment successful!"
             else
               echo "❌ Deployment failed! Starting rollback..."
-              chmod +x scripts/rollback.sh
               ./scripts/rollback.sh
               exit 1
             fi
