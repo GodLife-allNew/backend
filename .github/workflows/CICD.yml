@@ -13,7 +13,6 @@ permissions:
 
 jobs:
   build:
-    # PR이 머지되었거나 main에 직접 push된 경우만 실행
     if: github.event.pull_request.merged == true || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     
@@ -71,15 +70,30 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} << 'ENDSSH'
             set -e
             
-            # 작업 디렉토리로 이동
             cd /home/ubuntu/app
+            
+            # .env 파일 생성 (매번 최신 정보로 업데이트)
+            printf '%s\n' \
+              "DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" \
+              "DB_NAME=${{ secrets.DB_NAME }}" \
+              "DB_USER=${{ secrets.DB_USER }}" \
+              "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+              "REDIS_HOST=redis" \
+              "REDIS_PORT=6379" \
+              "DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" \
+              "IMAGE_TAG=latest" \
+              "TZ=Asia/Seoul" \
+              > .env
+            
+            chmod 600 .env
+            echo "✓ Environment file updated"
             
             # 배포 스크립트 실행
             echo "🚀 Starting deployment..."
             ./scripts/deploy.sh
             
-            # 배포 결과 확인
-            if [ $? -eq 0 ]; then
+            DEPLOY_EXIT_CODE=$?
+            if [ $DEPLOY_EXIT_CODE -eq 0 ]; then
               echo "✅ Deployment successful!"
             else
               echo "❌ Deployment failed! Starting rollback..."
@@ -91,20 +105,22 @@ jobs:
       - name: Verify deployment
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.GODLIFE_SERVER_IP }} << 'ENDSSH'
+            cd /home/ubuntu/app
+            
             echo "=== Current container status ==="
             docker ps --filter "name=blue" --filter "name=green" --format "table {{.Names}}\t{{.Status}}"
             
             echo ""
             echo "=== Current Nginx upstream ==="
-            cat /home/ubuntu/app/nginx/conf.d/service-env.inc
+            cat ./nginx/conf.d/service-env.inc
             
             echo ""
-            echo "=== Health check (HTTPS) ==="
-            curl -k -s https://localhost/api/hc || echo "Health check failed"
+            echo "=== Health check ==="
+            curl -s -k https://localhost/api/hc || echo "Health check failed"
             
             echo ""
             echo "=== Direct container health check ==="
-            ACTIVE_CONTAINER=$(cat /home/ubuntu/app/nginx/conf.d/service-env.inc | grep -oP '(?<=set \$service_url )\w+')
+            ACTIVE_CONTAINER=$(cat ./nginx/conf.d/service-env.inc | grep -oP '(?<=set \$service_url )\w+' | cut -d: -f1)
             echo "Active container: $ACTIVE_CONTAINER"
             docker exec $ACTIVE_CONTAINER wget -qO- http://localhost:9090/api/hc || echo "Direct check failed"
           ENDSSH
