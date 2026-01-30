@@ -31,7 +31,15 @@ public interface ServiceAdminMapper {
 
   // 관리자 상태 조회
   @Select("SELECT STATUS FROM SERVICE_CENTER WHERE USER_IDX = #{userIdx}")
-  boolean getServiceAdminStatus(int userIdx);
+  Boolean getServiceAdminStatus(int userIdx);
+
+  // 관리자 상태 조회 (비관적 락)
+  @Select("SELECT STATUS FROM SERVICE_CENTER WHERE USER_IDX = #{userIdx} FOR UPDATE")
+  Boolean getServiceAdminStatusForUpdate(int userIdx);
+
+  // 관리자 상태 설정
+  @Update("UPDATE SERVICE_CENTER SET STATUS = #{status} WHERE USER_IDX = #{userIdx}")
+  int setAdminStatus(@Param("userIdx") int userIdx, @Param("status") boolean status);
 
   // 접속중인 상담원 목록 조회
   @Select("""
