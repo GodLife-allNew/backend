@@ -85,13 +85,23 @@ public class ServiceAdminServiceImpl implements ServiceAdminService {
 
   // 관리자 상태 비/활성화 하기
   @Override
+  @Transactional(rollbackFor = Exception.class)
   public String switchAdminStatus(int userIdx) {
     try {
-      int result = serviceAdminMapper.switchAdminStatus(userIdx);
+      // 비관적 락으로 현재 상태 조회
+      Boolean currentStatus = serviceAdminMapper.getServiceAdminStatusForUpdate(userIdx);
 
-      if (result == 0) {
+      if (currentStatus == null) {
         log.warn("AdminService - switchAdminStatus :: 관리자가 아니거나, 로그아웃 처리된 상태입니다.");
         throw new CustomException("관리자가 아니거나, 로그아웃 처리된 상태입니다.", HttpStatus.NOT_FOUND);
+      }
+
+      // 상태 토글
+      boolean newStatus = !currentStatus;
+      int result = serviceAdminMapper.setAdminStatus(userIdx, newStatus);
+
+      if (result == 0) {
+        throw new CustomException("상태 변경에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
       }
 
       String isSaved = redisService.getStringData(SAVE_SERVICE_ADMIN_STATUS + userIdx);
@@ -99,11 +109,11 @@ public class ServiceAdminServiceImpl implements ServiceAdminService {
         redisService.deleteData(SAVE_SERVICE_ADMIN_STATUS + userIdx);
       }
 
-      return serviceAdminMapper.getServiceAdminStatus(userIdx) ? "활성화" : "비활성화";
+      return newStatus ? "활성화" : "비활성화";
     } catch (CustomException e) {
       throw e;
 
-    }catch (Exception e) {
+    } catch (Exception e) {
       log.error("AdminService - switchAdminStatus :: 알 수 없는 오류가 발생했습니다.", e);
       throw new CustomException("DB 오류가 발생했습니다. 관리자에게 문의 해주세요.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -125,10 +135,16 @@ public class ServiceAdminServiceImpl implements ServiceAdminService {
   @Override
   public String getAdminStatus(int userIdx) {
     try {
-      return serviceAdminMapper.getServiceAdminStatus(userIdx) ? "활성화" : "비활성화";
+      Boolean status = serviceAdminMapper.getServiceAdminStatus(userIdx);
+      if (status == null) {
+        throw new CustomException("관리자 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
+      }
+      return Boolean.TRUE.equals(status) ? "활성화" : "비활성화";
+    } catch (CustomException e) {
+      throw e;
     } catch (PersistenceException e) {
-      log.error("AdminService - getAdminStatus :: 관리자가 없거나 파라미터 혹은 결과가 null 입니다.", e);
-      throw new CustomException("관리자가 없거나, 파라미터 혹은 결과가 null 입니다.", HttpStatus.NOT_FOUND);
+      log.error("AdminService - getAdminStatus :: DB 조회 중 오류가 발생했습니다.", e);
+      throw new CustomException("DB 조회 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception e) {
       log.error("AdminService - getAdminStatus :: 알 수 없는 오류가 발생했습니다.", e);
       throw new CustomException("DB 오류가 발생했습니다. 관리자에게 문의 해주세요.", HttpStatus.INTERNAL_SERVER_ERROR);
