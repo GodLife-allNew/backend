@@ -6,7 +6,7 @@
 
     <!-- 채팅방 생성 쿼리 -->
     <insert id="createChatRoom" parameterType="com.godLife.project.dto.chat.ChatRoomDTO" useGeneratedKeys="true" keyProperty="roomIdx">
-        INSERT INTO ADMIN_CHAT_ROOMS(ROOM_IDX, NAME, IS_PUBLIC, CREATED_BY)
+        INSERT INTO ADMIN_CHAT_ROOMS(NAME, IS_PUBLIC, CREATED_BY)
         VALUES (
             <choose>
                 <when test="name == null">

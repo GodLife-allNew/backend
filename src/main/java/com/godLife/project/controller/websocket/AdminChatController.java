@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,8 +49,10 @@ public class AdminChatController {
   @MessageMapping("/roomChat/{roomNo}")
   @SendTo("/sub/roomChat/{roomNo}")
   public TestChatDTO broadcasting(final TestChatDTO request,
-                                  @DestinationVariable(value = "roomNo") final String chatRoomNo) {
+                                  @DestinationVariable(value = "roomNo") final String chatRoomNo,
+                                  Principal principal) {
     request.setRoomNo(chatRoomNo);
+    request.setSender(principal.getName());
     log.info("{roomNo : {}, request : {}}", chatRoomNo, request);
 
     return request;
