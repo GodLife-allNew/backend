@@ -27,12 +27,11 @@ public class CustomUserDetailsService  implements UserDetailsService {
     //System.out.println(userData);
     //System.out.println("============================================================================================");
     //System.out.println("CustomUserDetailsService 동작함");
-    if (userData != null) {
-
-      //UserDetails에 담아서 return하면 AutneticationManager가 검증 함
-      return new CustomUserDetails(userData);
+    if (userData == null) {
+      throw new UsernameNotFoundException("User not found: " + userId);
     }
 
-    return null;
+    //UserDetails에 담아서 return하면 AutneticationManager가 검증 함
+    return new CustomUserDetails(userData);
   }
 }

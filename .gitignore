@@ -65,3 +65,6 @@ build
 
 # 이미지 업로드 파일 제외
 uploads/
+
+## Claude Code 관련 파일 제외 ##
+.claude/
