@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component
+@Component // DB 직접 조회 테스트 시 비활성화
 @RequiredArgsConstructor
 @Slf4j
 public class CacheWarmUpRunner implements ApplicationRunner {

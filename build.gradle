@@ -27,6 +27,11 @@ dependencies {
     // Redis 분산 락
     implementation 'org.redisson:redisson-spring-boot-starter:3.45.1'
 
+    // Lettuce 커넥션 풀 (commons-pool2)
+    implementation 'org.apache.commons:commons-pool2'
+    // 로컬 캐시 (Caffeine)
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
 
 
     // DevTools (Hot Reload)
