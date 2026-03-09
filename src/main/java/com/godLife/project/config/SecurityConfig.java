@@ -106,23 +106,41 @@ public class SecurityConfig {
 
 
     // 지정한 엔드포인트는 해당 권한 등급이 없으면 로그인을 해도 접근 못함 (관리자)
-        // 관리자 권한 카테고리 조회
-            .requestMatchers("/api/categories/admin/**").hasAnyAuthority("2", "3", "4", "5", "6", "7")
-        // 테스트 용 (관리자 권한)
-            .requestMatchers("/api/admin").hasAuthority("7")
-        // 관리자 권한 챌린지 작성
-        .requestMatchers("/api/challenges/admin/create").hasAnyAuthority("2", "3", "4", "5", "6", "7")
-        .requestMatchers("/api/admin").hasAuthority("7")
-        // 관리자 권한 챌린지 관련
-        .requestMatchers("/api/challenges/admin/**").hasAnyAuthority("2", "3", "4", "5", "6", "7")
-        // 관리자 권한 공지사항 관련
-        .requestMatchers("/api/notice/admin/**").hasAnyAuthority("2", "3", "4", "5", "6", "7")
-        // 서비스 관리자 권한
+        // ===== 관리자 권한 세분화 =====
+
+        // FAQ 카테고리 관리 (3=매니저, 4=고객서비스, 6=중간관리자, 7=책임관리자)
+            .requestMatchers("/api/categories/admin/**").hasAnyAuthority("3", "4", "6", "7")
+
+        // 챌린지 관리 (3=매니저, 6=중간관리자, 7=책임관리자)
+        .requestMatchers("/api/challenges/admin/**").hasAnyAuthority("3", "6", "7")
+
+        // 공지사항 관리 (3=매니저, 4=고객서비스, 6=중간관리자, 7=책임관리자)
+        .requestMatchers("/api/notice/admin/**").hasAnyAuthority("3", "4", "6", "7")
+
+        // 1:1 문의 서비스 (3=매니저, 4=고객서비스, 6=중간관리자, 7=책임관리자)
         .requestMatchers("/api/service/admin/**").hasAnyAuthority("3", "4", "6", "7")
-        // 관리자 권한 페이지 관련
+
+        // 권한관리 (7=책임관리자만) - 반드시 /api/admin/users/** 보다 먼저 선언
         .requestMatchers("/api/admin/users/authority/**").hasAuthority("7")
-        //관리자 페이지 관련
-        .requestMatchers("/api/admin/**").hasAnyAuthority("2", "3", "4", "5", "6", "7")
+
+        // 유저 관리 (2=인턴, 3=매니저, 6=중간관리자, 7=책임관리자)
+        .requestMatchers("/api/admin/users/**").hasAnyAuthority("2", "3", "6", "7")
+
+        // 신고처리 (2=인턴, 3=매니저, 6=중간관리자, 7=책임관리자)
+        .requestMatchers("/api/admin/report/**").hasAnyAuthority("2", "3", "6", "7")
+
+        // 컴포넌트 관리 (5=DB관리자, 6=중간관리자, 7=책임관리자)
+        .requestMatchers("/api/admin/compSystem/**").hasAnyAuthority("5", "6", "7")
+        .requestMatchers("/api/admin/compContent/**").hasAnyAuthority("5", "6", "7")
+
+        // 추천 루틴관리 (3=매니저, 6=중간관리자, 7=책임관리자)
+        .requestMatchers("/api/admin/plans/**").hasAnyAuthority("3", "6", "7")
+
+        // 1:1 문의 채팅 (3=매니저, 4=고객서비스, 6=중간관리자, 7=책임관리자)
+        .requestMatchers("/api/admin/chat/**").hasAnyAuthority("3", "4", "6", "7")
+
+        // catch-all: 위에서 매칭되지 않은 /api/admin/** 경로는 책임관리자만
+        .requestMatchers("/api/admin/**").hasAuthority("7")
 
 
     // 그 외 모든 접근 허용 (비 로그인 접근)
