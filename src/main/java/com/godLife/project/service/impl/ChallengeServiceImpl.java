@@ -2,7 +2,6 @@ package com.godLife.project.service.impl;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
 import com.godLife.project.dto.infos.ChallengeJoinDTO;
-import com.godLife.project.dto.request.ChallRequestDTO;
 import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.ChallengeVerifyDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
@@ -138,7 +137,7 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     // ----------------- 챌린지 참여 -----------------
     @Override
-    public ChallengeDTO joinChallenge(Long challIdx, int userIdx, String activity, int activityTime,
+    public ChallengeDTO joinChallenge(Long challIdx, int userIdx, int activityTime,
                                       String token) {
         // 챌린지 기본 정보 조회
         ChallengeDTO challenge = challengeMapper.challengeDetail(challIdx);
@@ -194,7 +193,6 @@ public class ChallengeServiceImpl implements ChallengeService {
         challengeMapper.addUserToChallenge(
                 challIdx,
                 userIdx,
-                activity,
                 activityTime
         );
 
@@ -268,19 +266,11 @@ public class ChallengeServiceImpl implements ChallengeService {
                 challengeVerifyDTO.getUserIdx(),
                 challengeVerifyDTO.getStartTime(),
                 challengeVerifyDTO.getEndTime(),
-                elapsedTime
-        );
-
-        // 8. 활동 정보 갱신
-        challengeMapper.updateChallJoin(
-                challengeVerifyDTO.getChallIdx(),
-                Math.toIntExact(challengeVerifyDTO.getUserIdx()),
-                challengeVerifyDTO.getStartTime(),
-                challengeVerifyDTO.getEndTime(),
+                elapsedTime,
                 challengeVerifyDTO.getActivity()
         );
 
-        // 9. 챌린지 남은 시간 차감
+        // 8. 챌린지 남은 시간 차감
         challengeMapper.updateClearTime(
                 challengeVerifyDTO.getChallIdx(),
                 (int) elapsedTime

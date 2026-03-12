@@ -1,22 +1,16 @@
 package com.godLife.project.controller;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
-import com.godLife.project.dto.jwtDTO.CustomUserDetails;
-import com.godLife.project.dto.request.ChallRequestDTO;
 import com.godLife.project.dto.request.ChallengeJoinRequest;
 import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.ChallengeVerifyDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
 import com.godLife.project.handler.GlobalExceptionHandler;
-import com.godLife.project.jwt.LoginFilter;
 import com.godLife.project.service.interfaces.ChallengeService;
-import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
-import oracle.jdbc.proxy.annotation.Pre;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -147,7 +141,6 @@ public class ChallengeController {
       ChallengeDTO challenge = challengeService.joinChallenge(
               challIdx,
               userIdx,
-              joinRequest.getActivity(),
               joinRequest.getActivityTime(),
               token
       );

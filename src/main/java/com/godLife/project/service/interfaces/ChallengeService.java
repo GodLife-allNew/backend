@@ -1,7 +1,6 @@
 package com.godLife.project.service.interfaces;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
-import com.godLife.project.dto.request.ChallRequestDTO;
 import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.ChallengeVerifyDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
@@ -26,7 +25,7 @@ public interface ChallengeService {
 
 
     // 챌린지 참가
-    ChallengeDTO joinChallenge(Long challIdx, int userIdx, String activity, int activityTime, String token);
+    ChallengeDTO joinChallenge(Long challIdx, int userIdx, int activityTime, String token);
 
     // 챌린지 인증
     void verifyChallenge(ChallengeVerifyDTO challengeVerifyDTO);
