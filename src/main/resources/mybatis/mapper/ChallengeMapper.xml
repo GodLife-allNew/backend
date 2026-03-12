@@ -27,10 +27,25 @@
         CT.CHALL_END_TIME,
         COUNT(CJ.USER_IDX) AS CURRENT_PARTICIPANTS,
         CT.CHALL_CREATED_AT,
-        CT.CHALL_STATE
+        CT.CHALL_STATE,
+        <choose>
+            <when test="userIdx != null">
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM CHALL_JOIN cjc
+                    WHERE cjc.CHALL_IDX = CT.CHALL_IDX AND cjc.USER_IDX = #{userIdx}
+                ) THEN TRUE ELSE FALSE END AS isJoined
+            </when>
+            <otherwise>
+                FALSE AS isJoined
+            </otherwise>
+        </choose>
         FROM CHALL_TABLE CT
         LEFT JOIN CHALL_JOIN CJ ON CT.CHALL_IDX = CJ.CHALL_IDX
         <where>
+            <!-- 미래 등록/시작 챌린지 제외 -->
+            AND CT.CHALL_CREATED_AT &lt;= NOW()
+            AND (CT.CHALL_START_TIME IS NULL OR CT.CHALL_START_TIME &lt;= NOW())
+
             <!-- 상태 필터 -->
             <if test="challState != null and challState != ''">
                 AND CT.CHALL_STATE = #{challState}
@@ -51,6 +66,11 @@
                 AND UPPER(CT.CHALLENGE_TYPE) = UPPER(#{challengeType})
             </if>
 
+            <!-- 내가 참여중인 챌린지만 조회 -->
+            <if test="onlyJoined != null and onlyJoined == true and userIdx != null">
+                AND CJ.USER_IDX = #{userIdx}
+            </if>
+
             <!-- 종료 조건 처리 -->
             <choose>
                 <!-- 종료된 이벤트 챌린지만 -->
@@ -62,6 +82,10 @@
                 <!-- 진행중인 이벤트 챌린지만 -->
                 <when test="challengeType == 'SPECIAL' and (onlyEnded == null or !onlyEnded)">
                     AND (CT.CHALL_END_TIME IS NULL OR CT.CHALL_END_TIME &gt; NOW())
+                </when>
+
+                <!-- 종료/완료 상태를 명시적으로 조회하는 경우 → 종료 시간 필터 없음 -->
+                <when test="challState == 'END' or challState == 'FINISHED'">
                 </when>
 
                 <!-- 일반 챌린지 → 종료 제외 -->
@@ -92,6 +116,10 @@
         SELECT COUNT(*)
         FROM CHALL_TABLE CT
         <where>
+            <!-- 미래 등록/시작 챌린지 제외 -->
+            AND CT.CHALL_CREATED_AT &lt;= NOW()
+            AND (CT.CHALL_START_TIME IS NULL OR CT.CHALL_START_TIME &lt;= NOW())
+
             <!-- 상태 필터 -->
             <if test="challState != null and challState != ''">
                 AND CT.CHALL_STATE = #{challState}
@@ -112,6 +140,11 @@
                 AND CT.CHALLENGE_TYPE = #{challengeType}
             </if>
 
+            <!-- 내가 참여중인 챌린지만 조회 -->
+            <if test="onlyJoined != null and onlyJoined == true and userIdx != null">
+                AND EXISTS (SELECT 1 FROM CHALL_JOIN CJ WHERE CJ.CHALL_IDX = CT.CHALL_IDX AND CJ.USER_IDX = #{userIdx})
+            </if>
+
             <!-- 종료 조건 처리 (조회 쿼리와 동일) -->
             <choose>
                 <!-- 종료된 이벤트 챌린지만 -->
@@ -123,6 +156,10 @@
                 <!-- 진행중인 이벤트 챌린지만 -->
                 <when test="challengeType == 'SPECIAL' and (onlyEnded == null or !onlyEnded)">
                     AND (CT.CHALL_END_TIME IS NULL OR CT.CHALL_END_TIME &gt; NOW())
+                </when>
+
+                <!-- 종료/완료 상태를 명시적으로 조회하는 경우 → 종료 시간 필터 없음 -->
+                <when test="challState == 'END' or challState == 'FINISHED'">
                 </when>
 
                 <!-- 일반 챌린지 → 종료 제외 -->
@@ -148,14 +185,12 @@
     <!-- 인증 조회 -->
     <select id="getVerifyRecords" resultType="com.godLife.project.dto.verify.VerifyRecordDTO">
         SELECT
+        v.VERIFY_IDX AS verifyIdx,
         v.START_TIME AS startTime,
         v.END_TIME AS endTime,
         TIMESTAMPDIFF(MINUTE, v.START_TIME, v.END_TIME) AS elapsedMinutes,
-        cj. ACTIVITY AS activity
+        v.ACTIVITY AS activity
         FROM VERIFY_TABLE v
-        JOIN CHALL_JOIN cj
-        ON v.CHALL_IDX = cj.CHALL_IDX
-        AND v.USER_IDX = cj.USER_IDX
         WHERE v.CHALL_IDX = #{challIdx}
         AND v.USER_IDX = #{userIdx}
         ORDER BY v.START_TIME DESC
@@ -167,7 +202,6 @@
         cj.CHALL_IDX,
         cj.USER_IDX,
         u.USER_NICK AS userNick,
-        cj.ACTIVITY,
         cj.ACTIVITY_TIME
         FROM CHALL_JOIN cj
         JOIN USER_TABLE u ON cj.USER_IDX = u.USER_IDX
@@ -176,8 +210,8 @@
 
     <!-- 유저 참여 -->
     <insert id="addUserToChallenge">
-        INSERT INTO CHALL_JOIN (CHALL_IDX, USER_IDX, ACTIVITY, ACTIVITY_TIME)
-        VALUES (#{challIdx}, #{userIdx}, #{activity}, #{activityTime})
+        INSERT INTO CHALL_JOIN (CHALL_IDX, USER_IDX, ACTIVITY_TIME)
+        VALUES (#{challIdx}, #{userIdx}, #{activityTime})
     </insert>
 
 
@@ -193,9 +227,9 @@
     <!-- 인증 기록 저장 -->
     <insert id="insertVerify">
     INSERT INTO VERIFY_TABLE (
-        CHALL_IDX, USER_IDX,  VERIFY_DATE, START_TIME, END_TIME, ELAPSED_TIME)
+        CHALL_IDX, USER_IDX, VERIFY_DATE, START_TIME, END_TIME, ELAPSED_TIME, ACTIVITY)
     VALUES (
-        #{challIdx}, #{userIdx}, CURDATE(), #{startTime}, #{endTime}, #{elapsedTime}
+        #{challIdx}, #{userIdx}, CURDATE(), #{startTime}, #{endTime}, #{elapsedTime}, #{activity}
     )
     </insert>
 
@@ -206,21 +240,12 @@
         WHERE CHALL_IDX = #{challIdx}
     </select>
 
-    <!-- challJoin 업데이트 메퍼 -->
-    <update id="updateChallJoin">
-        UPDATE CHALL_JOIN
-        SET ACTIVITY = #{activity}
-        WHERE CHALL_IDX = #{challIdx}
-        AND USER_IDX = #{userIdx}
-    </update>
-
     <!-- 챌린지 참여 확인 -->
     <select id="getJoinInfo" resultType="com.godLife.project.dto.infos.ChallengeJoinDTO">
         SELECT
         CHALL_JOIN_IDX,
         CHALL_IDX,
-        USER_IDX,
-        ACTIVITY
+        USER_IDX
         FROM CHALL_JOIN
         WHERE CHALL_IDX = #{challIdx}
         AND USER_IDX = #{userIdx}
@@ -259,15 +284,15 @@
     <!-- 클리어 시간 0 이하 시 챌린지 종료 처리 -->
     <update id="finishChallenge">
         UPDATE CHALL_TABLE
-        SET CHALL_STATE = 'COMPLETED'
+        SET CHALL_STATE = 'FINISHED'
         WHERE CHALL_IDX = #{challIdx}
     </update>
 
     <!-- 진행 중인 챌린지를 종료 상태로 자동 변경 -->
     <update id="updateChallengesToEndStatus" parameterType="java.time.LocalDateTime">
         UPDATE CHALL_TABLE
-        SET CHALL_STATE = '종료됨'
-        WHERE CHALL_STATE = '진행중'
+        SET CHALL_STATE = 'END'
+        WHERE CHALL_STATE = 'IN_PROGRESS'
         AND CHALL_END_TIME <![CDATA[ <= ]]> #{now}
     </update>
 
@@ -288,7 +313,7 @@
         <if test="challCategoryIdx != null and challCategoryIdx != 0">
             AND CHALL_CATEGORY_IDX = #{challCategoryIdx}
         </if>
-        AND CHALL_STATE NOT IN ('COMPLETED','END')
+        AND CHALL_STATE NOT IN ('FINISHED','END')
     </select>
 
 </mapper>

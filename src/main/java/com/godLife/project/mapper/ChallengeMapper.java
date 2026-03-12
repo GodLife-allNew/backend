@@ -2,7 +2,6 @@ package com.godLife.project.mapper;
 
 import com.godLife.project.dto.contents.ChallengeDTO;
 import com.godLife.project.dto.infos.ChallengeJoinDTO;
-import com.godLife.project.dto.request.ChallRequestDTO;
 import com.godLife.project.dto.request.ChallengeSearchParamDTO;
 import com.godLife.project.dto.verify.VerifyRecordDTO;
 import org.apache.ibatis.annotations.Mapper;
@@ -39,7 +38,6 @@ public interface ChallengeMapper {
     // 챌린지에 유저 추가 (사용자 참여 기록)
     void addUserToChallenge(@Param("challIdx") Long challIdx,
                             @Param("userIdx") int userIdx,
-                            @Param("activity") String activity,
                             @Param("activityTime") int activityTime);
 
 
@@ -49,14 +47,7 @@ public interface ChallengeMapper {
             @Param("userIdx") Long userIdx,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
-            @Param("elapsedTime") Long elapsedTime
-    );
-    // 활동 정보 갱신
-    void updateChallJoin(
-            @Param("challIdx") Long challIdx,
-            @Param("userIdx") int userIdx,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
+            @Param("elapsedTime") Long elapsedTime,
             @Param("activity") String activity
     );
     // 챌린지 참여 확인 및 중복 체크
