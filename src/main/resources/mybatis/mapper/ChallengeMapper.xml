@@ -259,15 +259,15 @@
     <!-- 클리어 시간 0 이하 시 챌린지 종료 처리 -->
     <update id="finishChallenge">
         UPDATE CHALL_TABLE
-        SET CHALL_STATE = 'COMPLETED'
+        SET CHALL_STATE = 'FINISHED'
         WHERE CHALL_IDX = #{challIdx}
     </update>
 
     <!-- 진행 중인 챌린지를 종료 상태로 자동 변경 -->
     <update id="updateChallengesToEndStatus" parameterType="java.time.LocalDateTime">
         UPDATE CHALL_TABLE
-        SET CHALL_STATE = '종료됨'
-        WHERE CHALL_STATE = '진행중'
+        SET CHALL_STATE = 'END'
+        WHERE CHALL_STATE = 'IN_PROGRESS'
         AND CHALL_END_TIME <![CDATA[ <= ]]> #{now}
     </update>
 
@@ -288,7 +288,7 @@
         <if test="challCategoryIdx != null and challCategoryIdx != 0">
             AND CHALL_CATEGORY_IDX = #{challCategoryIdx}
         </if>
-        AND CHALL_STATE NOT IN ('COMPLETED','END')
+        AND CHALL_STATE NOT IN ('FINISHED','END')
     </select>
 
 </mapper>
