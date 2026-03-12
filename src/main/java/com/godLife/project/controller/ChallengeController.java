@@ -40,8 +40,10 @@ public class ChallengeController {
           @RequestParam(required = false) String visibilityType,
           @RequestParam(required = false) String challengeType,
           @RequestParam(required = false, defaultValue = "false") Boolean onlyEnded,
+          @RequestParam(required = false, defaultValue = "false") Boolean onlyJoined,
           @RequestParam(defaultValue = "1") int page,
-          @RequestParam(defaultValue = "10") int size
+          @RequestParam(defaultValue = "10") int size,
+          @RequestHeader(value = "Authorization", required = false) String authHeader
   ) {
     ChallengeSearchParamDTO param = new ChallengeSearchParamDTO();
     param.setChallState(challState);
@@ -49,8 +51,27 @@ public class ChallengeController {
     param.setVisibilityType(visibilityType);
     param.setChallengeType(challengeType);
     param.setOnlyEnded(onlyEnded);
+    param.setOnlyJoined(onlyJoined);
     param.setPage(page);
     param.setSize(size);
+
+    // 토큰이 있으면 userIdx 추출 (isJoined 표시 + onlyJoined 필터 공통 사용)
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+      try {
+        int userIdx = handler.getUserIdxFromToken(authHeader);
+        param.setUserIdx((long) userIdx);
+      } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("status", 401, "message", "유효하지 않은 토큰입니다."));
+      }
+    }
+
+    if (Boolean.TRUE.equals(onlyJoined)) {
+      if (param.getUserIdx() == null) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("status", 401, "message", "참여중인 챌린지 조회는 로그인이 필요합니다."));
+      }
+    }
 
     List<ChallengeDTO> challenges = challengeService.getLatestChallenges(param);
     int totalChallenges = challengeService.countLatestChallenges(param);

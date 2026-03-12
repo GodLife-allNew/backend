@@ -27,7 +27,18 @@
         CT.CHALL_END_TIME,
         COUNT(CJ.USER_IDX) AS CURRENT_PARTICIPANTS,
         CT.CHALL_CREATED_AT,
-        CT.CHALL_STATE
+        CT.CHALL_STATE,
+        <choose>
+            <when test="userIdx != null">
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM CHALL_JOIN cjc
+                    WHERE cjc.CHALL_IDX = CT.CHALL_IDX AND cjc.USER_IDX = #{userIdx}
+                ) THEN TRUE ELSE FALSE END AS isJoined
+            </when>
+            <otherwise>
+                FALSE AS isJoined
+            </otherwise>
+        </choose>
         FROM CHALL_TABLE CT
         LEFT JOIN CHALL_JOIN CJ ON CT.CHALL_IDX = CJ.CHALL_IDX
         <where>
@@ -53,6 +64,11 @@
             <!-- 타입 필터 -->
             <if test="challengeType != null and challengeType != ''">
                 AND UPPER(CT.CHALLENGE_TYPE) = UPPER(#{challengeType})
+            </if>
+
+            <!-- 내가 참여중인 챌린지만 조회 -->
+            <if test="onlyJoined != null and onlyJoined == true and userIdx != null">
+                AND CJ.USER_IDX = #{userIdx}
             </if>
 
             <!-- 종료 조건 처리 -->
@@ -122,6 +138,11 @@
             <!-- 타입 필터 -->
             <if test="challengeType != null and challengeType != ''">
                 AND CT.CHALLENGE_TYPE = #{challengeType}
+            </if>
+
+            <!-- 내가 참여중인 챌린지만 조회 -->
+            <if test="onlyJoined != null and onlyJoined == true and userIdx != null">
+                AND EXISTS (SELECT 1 FROM CHALL_JOIN CJ WHERE CJ.CHALL_IDX = CT.CHALL_IDX AND CJ.USER_IDX = #{userIdx})
             </if>
 
             <!-- 종료 조건 처리 (조회 쿼리와 동일) -->

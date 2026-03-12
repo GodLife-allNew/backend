@@ -14,4 +14,5 @@ import java.time.LocalDateTime;
     private LocalDateTime challEndTime;
     private Integer currentParticipants;
     private String challState;
+    private Boolean isJoined;  // 현재 로그인 유저의 참여 여부
 }

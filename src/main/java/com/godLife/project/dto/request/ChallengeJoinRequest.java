@@ -1,5 +1,6 @@
 package com.godLife.project.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChallengeJoinRequest {
   private int userIdx; // 유저 ID
   private int duration; // 지속 시간
